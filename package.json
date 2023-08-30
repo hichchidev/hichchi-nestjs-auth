@@ -2,8 +2,8 @@
   "name": "hichchi-nestjs-auth",
   "version": "0.0.1",
   "description": "Simple nestjs auth module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "jest",
     "build": "tsc",
