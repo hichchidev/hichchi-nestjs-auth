@@ -4,11 +4,12 @@ import { ExecutionContext, Inject, Injectable, UnauthorizedException } from "@ne
 import { AuthGuard } from "@nestjs/passport";
 import { AuthErrors } from "../responses";
 import { ExtractJwt } from "passport-jwt";
-import { IAuthOptions, IUserEntity } from "../interfaces";
+import { IAuthOptions } from "../interfaces";
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME } from "../tokens";
 import { AuthService } from "../services/auth.service";
-import { cookieExtractor } from "../utils";
 import { RedisCacheService } from "hichchi-nestjs-common/cache";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { cookieExtractor } from "../extractors";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {

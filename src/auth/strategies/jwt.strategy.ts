@@ -1,10 +1,11 @@
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PassportStrategy } from "@nestjs/passport";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { IAuthOptions, ITokenData, IUserEntity, IUserService } from "../interfaces";
+import { IAuthOptions, ITokenData, IUserService } from "../interfaces";
 import { AuthErrors } from "../responses";
 import { AUTH_OPTIONS, USER_SERVICE } from "../tokens";
-import { cookieExtractor } from "../utils";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { cookieExtractor } from "../extractors";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { IUserEntity } from "../interfaces";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 
 export const CurrentUser = createParamDecorator((_data: unknown, ctx: ExecutionContext): IUserEntity => {
     const request = ctx.switchToHttp().getRequest();

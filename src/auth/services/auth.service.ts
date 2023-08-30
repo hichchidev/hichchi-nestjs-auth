@@ -1,10 +1,12 @@
-import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { IAuthOptions, IRegisterDto, ITokenResponse, IUserEntity, IUserService, ITokenData } from "../interfaces";
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { IAuthOptions, IRegisterDto, ITokenResponse, IUserService, ITokenData } from "../interfaces";
 import { AUTH_OPTIONS, USER_SERVICE } from "../tokens";
 import { pbkdf2Sync, randomBytes } from "crypto";
 // import { RedisCacheService } from "../../cache/services/redis-cache.service";
 import { JwtService } from "@nestjs/jwt";
 import { AuthErrors } from "../responses";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { UpdatePasswordDto } from "../dtos/update-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -72,16 +74,18 @@ export class AuthService {
         return this.userService.getUserById(id);
     }
 
-    // async changePassword(id: number, updatePasswordDto: UpdatePasswordDto): Promise<IStatusResponse> {
-    //     const { password, salt } = await this.userService.get(id);
-    //     const { oldPassword, newPassword } = updatePasswordDto;
-    //     if (AuthService.verifyHash(oldPassword, password, salt)) {
-    //         const { password, salt } = AuthService.generatePassword(newPassword);
-    //         await this.userService.update(id, { password, salt });
-    //         return EntityUtils.handleSuccess(Operation.UPDATE, "user");
-    //     }
-    //     throw new NotFoundException(AuthErrors.AUTH_401_INVALID_PASSWORD);
-    // }
+    async changePassword(id: number, updatePasswordDto: UpdatePasswordDto): Promise<IUserEntity> {
+        const { password, salt } = await this.userService.getUserById(id);
+        const { oldPassword, newPassword } = updatePasswordDto;
+        if (AuthService.verifyHash(oldPassword, password, salt)) {
+            const { password, salt } = AuthService.generatePassword(newPassword);
+            const user = await this.userService.updateUserById(id, { password, salt });
+            delete user.password;
+            delete user.salt;
+            return user;
+        }
+        throw new NotFoundException(AuthErrors.AUTH_401_INVALID_PASSWORD);
+    }
 
     generateTokens(user: IUserEntity): ITokenResponse {
         const payload: ITokenData = {

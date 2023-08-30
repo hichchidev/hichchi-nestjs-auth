@@ -1,6 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { IUserEntity } from "../interfaces";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 
 export class BaseUserEntity implements IUserEntity {
     id: any;

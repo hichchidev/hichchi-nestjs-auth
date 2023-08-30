@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Post, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "../services/auth.service";
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_ENDPOINT, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME } from "../tokens";
-import { IAuthOptions, IUserEntity } from "../interfaces";
+import { IAuthOptions } from "../interfaces";
 import { LocalAuthGuard } from "../guards";
 import { LoginDto, RegisterDto } from "../dtos";
 import { Response } from "express";
@@ -10,6 +10,8 @@ import { JwtAuthGuard } from "../guards/jwt-auth.guard";
 import { validateDto } from "hichchi-nestjs-common/utils";
 import { SuccessResponse } from "hichchi-nestjs-common/responses";
 import { RedisCacheService } from "hichchi-nestjs-common/cache";
+import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { UpdatePasswordDto } from "../dtos/update-password.dto";
 
 @Controller(AUTH_ENDPOINT)
 export class AuthController {
@@ -49,8 +51,18 @@ export class AuthController {
     }
 
     @Get("me")
+    @UseGuards(JwtAuthGuard)
     async getCurrentUser(@CurrentUser() user: IUserEntity): Promise<IUserEntity> {
         return this.authService.getCurrentUser(user.id);
+    }
+
+    @Post("change-password")
+    @UseGuards(JwtAuthGuard)
+    changePassword(
+        @CurrentUser() user: IUserEntity,
+        @Body() updatePasswordDto: UpdatePasswordDto,
+    ): Promise<IUserEntity> {
+        return this.authService.changePassword(user.id, updatePasswordDto);
     }
 
     // @Post("verify-account")
@@ -58,21 +70,9 @@ export class AuthController {
     //     return this.authService.verifyAccount(verificationDto.token);
     // }
     //
-    // @UseGuards(JwtAuthGuard)
-    // @Get("me")
-    // getMe(@ReqUser() user: User): Promise<User> {
-    //     return this.authService.getMe(user.id);
-    // }
-    //
     // @Post("resend-verification")
     // resendVerification(@Body() verificationDto: ResendVerificationDto): Promise<SuccessResponse> {
     //     return this.authService.resendVerification(verificationDto.email);
-    // }
-    //
-    // @UseGuards(JwtAuthGuard)
-    // @Post("change-password")
-    // changePassword(@ReqUser() user: User, @Body() updatePasswordDto: UpdatePasswordDto): Promise<IStatusResponse> {
-    //     return this.authService.changePassword(user.id, updatePasswordDto);
     // }
     //
     // @Post("request-password-reset")
