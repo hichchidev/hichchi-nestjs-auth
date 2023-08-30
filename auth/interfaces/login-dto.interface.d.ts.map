@@ -1,0 +1,1 @@
+{"version":3,"file":"login-dto.interface.d.ts","sourceRoot":"","sources":["../../src/auth/interfaces/login-dto.interface.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,SAAS;IACtB,QAAQ,EAAE,MAAM,CAAC;IACjB,QAAQ,EAAE,MAAM,CAAC;CACpB"}
