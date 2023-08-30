@@ -1,0 +1,13 @@
+.idea
+.changeset/
+.github/
+dist/
+node_modules/
+src/
+.eslintignore
+.eslintrc.js
+.gitignore
+.npmignore
+.prettierrc
+*.spec.ts
+tsconfig.json
