@@ -2,7 +2,7 @@ import { CacheStore, CacheStoreFactory } from "@nestjs/cache-manager/dist/interf
 import { RegisterDto } from "../dtos";
 
 export interface RedisCacheOptions {
-    store: string | CacheStoreFactory | CacheStore;
+    store?: string | CacheStoreFactory | CacheStore;
     ttl: number;
     host: string;
     port: number;
