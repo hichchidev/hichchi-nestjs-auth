@@ -6,7 +6,7 @@ export interface RedisCacheOptions {
     ttl: number;
     host: string;
     port: number;
-    password?: string;
+    auth_pass?: string;
 }
 
 export interface IAuthOptions {

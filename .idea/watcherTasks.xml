@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectTasksOptions">
-    <TaskOptions isEnabled="false">
+    <TaskOptions isEnabled="true">
       <option name="arguments" value="run build:dev &amp;&amp; rimraf &quot;D:/Workspace/Web/learning-style/learning-style-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;dist/**&quot; &quot;D:/Workspace/Web/learning-style/learning-style-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;package.json&quot; &quot;D:/Workspace/Web/learning-style/learning-style-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;node_modules&quot; &quot;D:/Workspace/Web/learning-style/learning-style-api/node_modules/hichchi-nestjs-auth&quot;" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
