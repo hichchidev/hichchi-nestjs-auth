@@ -39,12 +39,14 @@ export class AuthController {
             maxAge: this.authOptions.jwt.expiresIn * 1000,
             httpOnly: true,
             sameSite: this.authOptions.cookies.sameSite,
+            secure: this.authOptions.cookies.secure,
             signed: true,
         });
         response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokenResponse.refreshToken, {
             maxAge: this.authOptions.jwt.refreshExpiresIn * 1000,
             httpOnly: true,
             sameSite: this.authOptions.cookies.sameSite,
+            secure: this.authOptions.cookies.secure,
             signed: true,
         });
         return user;

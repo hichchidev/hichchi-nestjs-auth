@@ -10,6 +10,7 @@ import { AuthService } from "../services/auth.service";
 import { RedisCacheService } from "hichchi-nestjs-common/cache";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { cookieExtractor } from "../extractors";
+import { LoggerService } from "hichchi-nestjs-common/services";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
@@ -44,14 +45,14 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
             response.cookie(ACCESS_TOKEN_COOKIE_NAME, tokens.refreshToken, {
                 maxAge: Number(this.authOptions.jwt.expiresIn) * 1000,
-                httpOnly: true,
+                httpOnly: false,
                 sameSite: this.authOptions.cookies.sameSite,
                 secure: this.authOptions.cookies.secure,
                 signed: true,
             });
             response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokens.refreshToken, {
                 maxAge: Number(this.authOptions.jwt.refreshExpiresIn) * 1000,
-                httpOnly: true,
+                httpOnly: false,
                 sameSite: this.authOptions.cookies.sameSite,
                 secure: this.authOptions.cookies.secure,
                 signed: true,
@@ -59,7 +60,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
             return this.activate(context);
         } catch (err) {
-            // LoggerService.error(err);
+            LoggerService.error(err);
             response.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
             response.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
             return false;
