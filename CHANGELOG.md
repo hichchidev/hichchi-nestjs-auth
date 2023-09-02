@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.0.5
+
+### Patch Changes
+
+- a9edd62: Fix cookie issue
+
 ## 0.0.4
 
 ### Patch Changes
