@@ -1,1 +1,0 @@
-{"version":3,"file":"base-user.entity.d.ts","sourceRoot":"","sources":["../../src/auth/entities/base-user.entity.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,WAAW,EAAE,MAAM,kCAAkC,CAAC;AAE/D,qBAAa,cAAe,YAAW,WAAW;IAC9C,EAAE,EAAE,GAAG,CAAC;IAER,QAAQ,EAAE,MAAM,CAAC;IAEjB,QAAQ,EAAE,MAAM,CAAC;IAEjB,IAAI,EAAE,MAAM,CAAC;IAEb,IAAI,CAAC,EAAE,MAAM,CAAC;CACjB"}
