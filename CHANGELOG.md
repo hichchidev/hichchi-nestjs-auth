@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.0.7
+
+### Patch Changes
+
+- 9e33bd9: Add redis url support
+
 ## 0.0.6
 
 ### Patch Changes
