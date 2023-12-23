@@ -26,14 +26,19 @@ export class HichchiAuthModule {
     ): DynamicModule {
         // noinspection SpellCheckingInspection
         const options: IAuthOptions = {
-            redis: {
-                store: authOptions.redis?.store || redisStore,
-                ttl: authOptions.redis?.ttl || 10,
-                host: authOptions.redis?.host || "localhost",
-                port: authOptions.redis?.port || 6379,
-                auth_pass: authOptions.redis?.auth_pass,
-                url: authOptions.redis?.url,
-            },
+            redis: authOptions.redis?.url
+                ? {
+                      ttl: authOptions.redis?.ttl || 10,
+                      store: authOptions.redis?.store || redisStore,
+                      url: authOptions.redis?.url,
+                  }
+                : {
+                      store: authOptions.redis?.store || redisStore,
+                      ttl: authOptions.redis?.ttl || 10,
+                      host: authOptions.redis?.host || "localhost",
+                      port: authOptions.redis?.port || 6379,
+                      auth_pass: authOptions.redis?.auth_pass,
+                  },
             jwt: {
                 secret: authOptions.jwt?.secret || DEFAULT_SECRET,
                 expiresIn: authOptions.jwt?.expiresIn || 60 * 60 * 24 * 30,
