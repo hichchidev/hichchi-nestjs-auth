@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.0.9
+
+### Patch Changes
+
+- c09a436: Fix redis prefix support
+
 ## 0.0.8
 
 ### Patch Changes
