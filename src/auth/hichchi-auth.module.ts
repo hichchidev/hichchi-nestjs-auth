@@ -32,6 +32,7 @@ export class HichchiAuthModule {
                 host: authOptions.redis?.host || "localhost",
                 port: authOptions.redis?.port || 6379,
                 auth_pass: authOptions.redis?.auth_pass,
+                url: authOptions.redis?.url,
             },
             jwt: {
                 secret: authOptions.jwt?.secret || DEFAULT_SECRET,
