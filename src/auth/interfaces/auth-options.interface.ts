@@ -4,9 +4,10 @@ import { RegisterDto } from "../dtos";
 export interface RedisCacheOptions {
     store?: string | CacheStoreFactory | CacheStore;
     ttl: number;
-    host: string;
-    port: number;
+    host?: string;
+    port?: number;
     auth_pass?: string;
+    url?: string;
 }
 
 export interface IAuthOptions {
