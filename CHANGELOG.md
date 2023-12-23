@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.0.6
+
+### Patch Changes
+
+- 4b33e67: Fix git issue
+
 ## 0.0.5
 
 ### Patch Changes
