@@ -48,6 +48,8 @@ export class AuthService {
 
     async authenticate(username: string, password: string): Promise<IUserEntity> {
         try {
+            console.log("hichchi-nestjs-auth => authOptions: ", this.authOptions);
+
             const user = await this.userService.getUserByUsername(username);
             if (!user) {
                 return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID));
