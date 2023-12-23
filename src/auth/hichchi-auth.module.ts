@@ -31,6 +31,7 @@ export class HichchiAuthModule {
                       ttl: authOptions.redis?.ttl || 10,
                       store: authOptions.redis?.store || redisStore,
                       url: authOptions.redis?.url,
+                      prefix: authOptions.redis?.prefix,
                   }
                 : {
                       store: authOptions.redis?.store || redisStore,
@@ -38,6 +39,7 @@ export class HichchiAuthModule {
                       host: authOptions.redis?.host || "localhost",
                       port: authOptions.redis?.port || 6379,
                       auth_pass: authOptions.redis?.auth_pass,
+                      prefix: authOptions.redis?.prefix,
                   },
             jwt: {
                 secret: authOptions.jwt?.secret || DEFAULT_SECRET,

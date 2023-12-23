@@ -8,6 +8,7 @@ export interface RedisCacheOptions {
     port?: number;
     auth_pass?: string;
     url?: string;
+    prefix?: string;
 }
 
 export interface IAuthOptions {
