@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.0.8
+
+### Patch Changes
+
+- be72296: Add redis prefix support
+
 ## 0.0.7
 
 ### Patch Changes
