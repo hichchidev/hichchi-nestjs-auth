@@ -7,3 +7,4 @@ export * from "./tokens.interface";
 export * from "./user-service.interface";
 export * from "./auth-response.interface";
 export * from "./login-dto.interface";
+export * from "./user-session.interface";

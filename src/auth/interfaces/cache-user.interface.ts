@@ -1,9 +1,5 @@
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
-
-export interface IUserSession {
-    accessToken: string;
-    refreshToken: string;
-}
+import { IUserSession } from "./user-session.interface";
 
 export interface ICacheUser extends Omit<IUserEntity, "password" | "salt"> {
     sessions: IUserSession[];

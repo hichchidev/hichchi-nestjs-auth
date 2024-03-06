@@ -4,21 +4,21 @@ import { ExecutionContext, Inject, Injectable, UnauthorizedException } from "@ne
 import { AuthGuard } from "@nestjs/passport";
 import { AuthErrors } from "../responses";
 import { ExtractJwt } from "passport-jwt";
-import { IAuthOptions } from "../interfaces";
+import { IAuthOptions, ICacheUser } from "../interfaces";
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME } from "../tokens";
 import { AuthService } from "../services/auth.service";
-import { RedisCacheService } from "hichchi-nestjs-common/cache";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { cookieExtractor } from "../extractors";
 import { LoggerService } from "hichchi-nestjs-common/services";
 import { AuthType } from "../enums/auth-type.enum";
+import { UserCacheService } from "../services/user-cache.service";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
     constructor(
         @Inject(AUTH_OPTIONS) private readonly authOptions: IAuthOptions,
         private readonly authService: AuthService,
-        private readonly cacheService: RedisCacheService,
+        private readonly cacheService: UserCacheService,
     ) {
         super();
     }
@@ -46,7 +46,12 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
                 const user = await this.authService.getUserByToken(refreshToken, true);
                 const tokens = this.authService.generateTokens(user);
 
-                await this.cacheService.setUser(user);
+                const cacheUser: ICacheUser = (await this.cacheService.getUser(user.id)) ?? { ...user, sessions: [] };
+
+                cacheUser.sessions = cacheUser.sessions.filter((session) => session.refreshToken !== refreshToken);
+                cacheUser.sessions.push({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+
+                await this.cacheService.setUser(cacheUser);
 
                 request.signedCookies[ACCESS_TOKEN_COOKIE_NAME] = tokens.accessToken;
 

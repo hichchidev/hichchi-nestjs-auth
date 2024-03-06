@@ -1,13 +1,14 @@
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PassportStrategy } from "@nestjs/passport";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { IAuthOptions, ICacheUser, IJwtPayload } from "../interfaces";
+import { IAuthOptions, IJwtPayload } from "../interfaces";
 import { AuthErrors } from "../responses";
 import { AUTH_OPTIONS } from "../tokens";
 import { cookieExtractor } from "../extractors";
 import { AuthType } from "../enums/auth-type.enum";
 import { AuthService } from "../services/auth.service";
 import { LoggerService } from "hichchi-nestjs-common/services";
+import { TokenUser } from "../types/token-user.type";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -27,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     // noinspection JSUnusedGlobalSymbols
-    async validate(request: Request, jwtPayload: IJwtPayload): Promise<ICacheUser> {
+    async validate(request: Request, jwtPayload: IJwtPayload): Promise<TokenUser> {
         try {
             const accessToken: string = request.headers["authorization"].split(" ")[1];
             const logout = Boolean(request.url.match("/logout"));

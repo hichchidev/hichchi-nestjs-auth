@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Post, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "../services/auth.service";
-import { ACCESS_TOKEN_COOKIE_NAME, AUTH_ENDPOINT, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME } from "../tokens";
+import { AUTH_ENDPOINT, AUTH_OPTIONS } from "../tokens";
 import { IAuthOptions, IAuthResponse } from "../interfaces";
 import { LocalAuthGuard } from "../guards";
 import { LoginDto, RegisterDto } from "../dtos";
@@ -11,14 +11,12 @@ import { validateDto } from "hichchi-nestjs-common/utils";
 import { SuccessResponse } from "hichchi-nestjs-common/responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { UpdatePasswordDto } from "../dtos/update-password.dto";
-import { AuthType } from "../enums/auth-type.enum";
-import { UserCacheService } from "../services/user-cache.service";
+import { TokenUser } from "../types/token-user.type";
 
 @Controller(AUTH_ENDPOINT)
 export class AuthController {
     constructor(
         @Inject(AUTH_OPTIONS) private authOptions: IAuthOptions,
-        private cacheService: UserCacheService,
         private readonly authService: AuthService,
     ) {}
 
@@ -39,16 +37,13 @@ export class AuthController {
 
     @Get("me")
     @UseGuards(JwtAuthGuard)
-    async getCurrentUser(@CurrentUser() user: IUserEntity): Promise<IUserEntity> {
+    async getCurrentUser(@CurrentUser() user: TokenUser): Promise<IUserEntity> {
         return this.authService.getCurrentUser(user.id);
     }
 
     @Post("change-password")
     @UseGuards(JwtAuthGuard)
-    changePassword(
-        @CurrentUser() user: IUserEntity,
-        @Body() updatePasswordDto: UpdatePasswordDto,
-    ): Promise<IUserEntity> {
+    changePassword(@CurrentUser() user: TokenUser, @Body() updatePasswordDto: UpdatePasswordDto): Promise<IUserEntity> {
         return this.authService.changePassword(user.id, updatePasswordDto);
     }
 
@@ -75,28 +70,9 @@ export class AuthController {
     @Post("logout")
     @UseGuards(JwtAuthGuard)
     async clearAuthentication(
-        @CurrentUser() user: IUserEntity,
+        @CurrentUser() user: TokenUser,
         @Res({ passthrough: true }) response: Response,
     ): Promise<SuccessResponse> {
-        if (this.authOptions.authType === AuthType.COOKIE) {
-            response.cookie(ACCESS_TOKEN_COOKIE_NAME, "", {
-                maxAge: 0,
-                httpOnly: true,
-                sameSite: this.authOptions.cookies.sameSite,
-                secure: this.authOptions.cookies.secure,
-                signed: true,
-                // secure: this.authOptions.app.isProd,
-            });
-            response.cookie(REFRESH_TOKEN_COOKIE_NAME, "", {
-                maxAge: 0,
-                httpOnly: true,
-                sameSite: this.authOptions.cookies.sameSite,
-                secure: this.authOptions.cookies.secure,
-                signed: true,
-                // secure: this.authOptions.app.isProd,
-            });
-        }
-        await this.cacheService.clearUser(user.id);
-        return new SuccessResponse("Successfully logged out");
+        return this.authService.logout(user, response);
     }
 }

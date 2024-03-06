@@ -20,6 +20,8 @@ import { Response } from "express";
 import { UserCacheService } from "./user-cache.service";
 import { JwtTokenService } from "./jwt-token.service";
 import { LoggerService } from "hichchi-nestjs-common/services";
+import { SuccessResponse } from "hichchi-nestjs-common/responses";
+import { TokenUser } from "../types/token-user.type";
 
 @Injectable()
 export class AuthService {
@@ -128,13 +130,13 @@ export class AuthService {
         };
     }
 
-    async validateUserUsingJWT(payload: IJwtPayload, accessToken: string, logout: boolean): Promise<ICacheUser> {
+    async validateUserUsingJWT(payload: IJwtPayload, accessToken: string, logout: boolean): Promise<TokenUser> {
         try {
             this.jwtTokenService.verifyAccessToken(accessToken);
         } catch (err) {
             if (err instanceof TokenExpiredError) {
                 if (logout) {
-                    return { id: payload.sub } as ICacheUser;
+                    return { id: payload.sub } as TokenUser;
                 }
                 return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
             }
@@ -150,7 +152,15 @@ export class AuthService {
             return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
         }
 
-        return cacheUser;
+        const { sessions, ...user } = cacheUser;
+
+        const session = sessions.find((s) => s.accessToken === accessToken);
+
+        return {
+            ...user,
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+        };
     }
 
     getCurrentUser(id: number): Promise<IUserEntity> {
@@ -293,4 +303,35 @@ export class AuthService {
     //         }
     //     });
     // }
+
+    async logout(user: TokenUser, response: Response): Promise<SuccessResponse> {
+        if (this.authOptions.authType === AuthType.COOKIE) {
+            response.cookie(ACCESS_TOKEN_COOKIE_NAME, "", {
+                maxAge: 0,
+                httpOnly: true,
+                sameSite: this.authOptions.cookies.sameSite,
+                secure: this.authOptions.cookies.secure,
+                signed: true,
+                // secure: this.authOptions.app.isProd,
+            });
+            response.cookie(REFRESH_TOKEN_COOKIE_NAME, "", {
+                maxAge: 0,
+                httpOnly: true,
+                sameSite: this.authOptions.cookies.sameSite,
+                secure: this.authOptions.cookies.secure,
+                signed: true,
+                // secure: this.authOptions.app.isProd,
+            });
+        }
+
+        const cacheUser = await this.cacheService.getUser(user.id);
+        if ((cacheUser?.sessions?.length || 0) > 1) {
+            cacheUser.sessions = cacheUser.sessions.filter((session) => session.accessToken !== user.accessToken);
+            await this.cacheService.setUser(cacheUser);
+        } else {
+            await this.cacheService.clearUser(user.id);
+        }
+
+        return new SuccessResponse("Successfully logged out");
+    }
 }
