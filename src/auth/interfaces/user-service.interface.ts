@@ -4,5 +4,7 @@ export interface IUserService {
     createUser(userDto: Partial<IUserEntity>): Promise<IUserEntity>;
     updateUserById(id: string | number, userDto: Partial<IUserEntity>): Promise<IUserEntity>;
     getUserById(id: string | number): Promise<IUserEntity | undefined>;
-    getUserByUsername(username: string): Promise<IUserEntity | undefined>;
+    getUserByUsername?(username: string): Promise<IUserEntity | undefined>;
+    getUserByEmail?(email: string): Promise<IUserEntity | undefined>;
+    getUserByUsernameOrEmail?(username: string): Promise<IUserEntity | undefined>;
 }

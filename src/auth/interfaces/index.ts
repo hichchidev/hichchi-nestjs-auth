@@ -1,5 +1,6 @@
 export * from "./auth-options.interface";
 export * from "./register-dto.interface";
+export * from "./cache-user.interface";
 export * from "./token-response.interface";
 export * from "./token-data.interface";
 export * from "./tokens.interface";

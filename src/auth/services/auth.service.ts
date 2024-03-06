@@ -1,20 +1,33 @@
 import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { IAuthOptions, IRegisterDto, ITokenResponse, IUserService, ITokenData } from "../interfaces";
-import { AUTH_OPTIONS, USER_SERVICE } from "../tokens";
+import {
+    IAuthOptions,
+    IAuthResponse,
+    ICacheUser,
+    IRegisterDto,
+    IJwtPayload,
+    ITokenResponse,
+    IUserService,
+} from "../interfaces";
+import { ACCESS_TOKEN_COOKIE_NAME, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME, USER_SERVICE } from "../tokens";
 import { pbkdf2Sync, randomBytes } from "crypto";
-// import { RedisCacheService } from "../../cache/services/redis-cache.service";
-import { JwtService } from "@nestjs/jwt";
+import { TokenExpiredError } from "@nestjs/jwt";
 import { AuthErrors } from "../responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { UpdatePasswordDto } from "../dtos/update-password.dto";
+import { AuthBy } from "../enums/auth-by.enum";
+import { AuthType } from "../enums/auth-type.enum";
+import { Response } from "express";
+import { UserCacheService } from "./user-cache.service";
+import { JwtTokenService } from "./jwt-token.service";
+import { LoggerService } from "hichchi-nestjs-common/services";
 
 @Injectable()
 export class AuthService {
     constructor(
-        @Inject(USER_SERVICE) private userService: IUserService,
         @Inject(AUTH_OPTIONS) private authOptions: IAuthOptions,
-        // private readonly cacheService: RedisCacheService,
-        private readonly jwtService: JwtService,
+        @Inject(USER_SERVICE) private userService: IUserService,
+        private readonly cacheService: UserCacheService,
+        private readonly jwtTokenService: JwtTokenService,
     ) {}
 
     // noinspection JSUnusedGlobalSymbols
@@ -33,10 +46,6 @@ export class AuthService {
         return hash === generatedHash;
     }
 
-    public generateToken(payload: ITokenData, secret: string, expiresIn: number): string {
-        return this.jwtService.sign(payload, { secret, expiresIn: `${expiresIn}s` });
-    }
-
     async register(registerDto: IRegisterDto): Promise<IUserEntity> {
         const { password: rawPass, ...rest } = registerDto;
         const { password, salt } = AuthService.generatePassword(rawPass);
@@ -48,9 +57,16 @@ export class AuthService {
 
     async authenticate(username: string, password: string): Promise<IUserEntity> {
         try {
-            console.log("hichchi-nestjs-auth => authOptions: ", this.authOptions);
+            // eslint-disable-next-line no-console
+            // console.log("hichchi-nestjs-auth => authOptions: ", this.authOptions);
 
-            const user = await this.userService.getUserByUsername(username);
+            const user =
+                this.authOptions.authBy === AuthBy.USERNAME
+                    ? await this.userService.getUserByUsername(username)
+                    : this.authOptions.authBy === AuthBy.EMAIL
+                      ? await this.userService.getUserByEmail(username)
+                      : await this.userService.getUserByUsernameOrEmail(username);
+
             if (!user) {
                 return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID));
             }
@@ -67,9 +83,74 @@ export class AuthService {
             delete user.salt;
             return user;
         } catch (err: any) {
-            // LoggerService.error(err);
+            LoggerService.error(err);
             throw new UnauthorizedException(AuthErrors.AUTH_401_INVALID);
         }
+    }
+
+    async login(user: IUserEntity, response: Response): Promise<IAuthResponse> {
+        const tokenResponse = this.generateTokens(user);
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, salt, ...rest } = user;
+        const cacheUser: ICacheUser = (await this.cacheService.getUser(user.id)) ?? { ...rest, sessions: [] };
+
+        if (cacheUser.sessions.length) {
+            cacheUser.sessions.push({
+                accessToken: tokenResponse.accessToken,
+                refreshToken: tokenResponse.refreshToken,
+            });
+        } else {
+            cacheUser.sessions = [{ accessToken: tokenResponse.accessToken, refreshToken: tokenResponse.refreshToken }];
+        }
+
+        await this.cacheService.setUser(cacheUser);
+
+        if (this.authOptions.authType === AuthType.COOKIE) {
+            response.cookie(ACCESS_TOKEN_COOKIE_NAME, tokenResponse.accessToken, {
+                maxAge: this.authOptions.jwt.expiresIn * 1000,
+                httpOnly: true,
+                sameSite: this.authOptions.cookies.sameSite,
+                secure: this.authOptions.cookies.secure,
+                signed: true,
+            });
+            response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokenResponse.refreshToken, {
+                maxAge: this.authOptions.jwt.refreshExpiresIn * 1000,
+                httpOnly: true,
+                sameSite: this.authOptions.cookies.sameSite,
+                secure: this.authOptions.cookies.secure,
+                signed: true,
+            });
+        }
+        return {
+            ...tokenResponse,
+            user,
+        };
+    }
+
+    async validateUserUsingJWT(payload: IJwtPayload, accessToken: string, logout: boolean): Promise<ICacheUser> {
+        try {
+            this.jwtTokenService.verifyAccessToken(accessToken);
+        } catch (err) {
+            if (err instanceof TokenExpiredError) {
+                if (logout) {
+                    return { id: payload.sub } as ICacheUser;
+                }
+                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
+            }
+        }
+
+        const cacheUser = await this.cacheService.getUser(payload.sub);
+
+        if (
+            !cacheUser ||
+            !cacheUser.sessions?.length ||
+            !cacheUser.sessions?.find((session) => session.accessToken === accessToken)
+        ) {
+            return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
+        }
+
+        return cacheUser;
     }
 
     getCurrentUser(id: number): Promise<IUserEntity> {
@@ -90,22 +171,16 @@ export class AuthService {
     }
 
     generateTokens(user: IUserEntity): ITokenResponse {
-        const payload: ITokenData = {
+        const payload: IJwtPayload = {
             sub: user.id,
             username: user.username,
             email: user.email,
         };
-        const accessToken: string = this.generateToken(
-            payload,
-            this.authOptions.jwt.secret,
-            this.authOptions.jwt.expiresIn,
-        );
 
-        const refreshToken: string = this.generateToken(
-            payload,
-            this.authOptions.jwt.refreshSecret,
-            this.authOptions.jwt.refreshExpiresIn,
-        );
+        const accessToken: string = this.jwtTokenService.createToken(payload);
+
+        const refreshToken: string = this.jwtTokenService.createRefreshToken(payload);
+
         return {
             accessToken,
             refreshToken,
@@ -114,22 +189,18 @@ export class AuthService {
         };
     }
 
-    public verifyToken(token: string, refresh?: boolean): { sub: number; email: number } {
-        return this.jwtService.verify(token, {
-            secret: refresh ? this.authOptions.jwt.refreshSecret : this.authOptions.jwt.secret,
-        });
-    }
-
-    public async getUserByToken(bearerToken: string, refresh?: boolean): Promise<IUserEntity> {
+    public async getUserByToken(token: string, refresh?: boolean): Promise<IUserEntity> {
         try {
-            const payload = this.verifyToken(bearerToken, refresh);
+            const payload = refresh
+                ? this.jwtTokenService.verifyRefreshToken(token)
+                : this.jwtTokenService.verifyAccessToken(token);
             const user = await this.userService.getUserById(payload.sub);
             if (!user) {
                 return null;
             }
             return user;
         } catch (err: any) {
-            // LoggerService.error(err);
+            LoggerService.error(err);
             return null;
         }
     }

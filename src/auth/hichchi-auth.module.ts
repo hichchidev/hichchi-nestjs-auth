@@ -13,6 +13,10 @@ import { LocalStrategy } from "./strategies";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { RedisCacheModule } from "hichchi-nestjs-common/cache";
+import { AuthType } from "./enums/auth-type.enum";
+import { AuthBy } from "./enums/auth-by.enum";
+import { UserCacheService } from "./services/user-cache.service";
+import { JwtTokenService } from "./services/jwt-token.service";
 
 // noinspection SpellCheckingInspection
 export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
@@ -52,6 +56,9 @@ export class HichchiAuthModule {
                 sameSite: authOptions.cookies?.sameSite || "none",
                 secure: Boolean(authOptions.cookies?.secure),
             },
+            authType: authOptions.authType ?? AuthType.JWT,
+            authBy: authOptions.authBy ?? AuthBy.BOTH,
+            registerDto: authOptions.registerDto,
         };
 
         return {
@@ -74,6 +81,8 @@ export class HichchiAuthModule {
                     useValue: options,
                 },
                 AuthService,
+                UserCacheService,
+                JwtTokenService,
                 LocalStrategy,
                 JwtStrategy,
                 JwtAuthGuard,

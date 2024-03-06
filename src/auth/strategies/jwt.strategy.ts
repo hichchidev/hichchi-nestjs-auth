@@ -1,35 +1,39 @@
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PassportStrategy } from "@nestjs/passport";
 import { Inject, Injectable, UnauthorizedException } from "@nestjs/common";
-import { IAuthOptions, ITokenData, IUserService } from "../interfaces";
+import { IAuthOptions, ICacheUser, IJwtPayload } from "../interfaces";
 import { AuthErrors } from "../responses";
-import { AUTH_OPTIONS, USER_SERVICE } from "../tokens";
-import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { AUTH_OPTIONS } from "../tokens";
 import { cookieExtractor } from "../extractors";
+import { AuthType } from "../enums/auth-type.enum";
+import { AuthService } from "../services/auth.service";
+import { LoggerService } from "hichchi-nestjs-common/services";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
-        @Inject(USER_SERVICE) private userService: IUserService,
-        @Inject(AUTH_OPTIONS) authOptions: IAuthOptions,
+        @Inject(AUTH_OPTIONS) readonly authOptions: IAuthOptions,
+        private readonly authService: AuthService,
     ) {
         super({
-            jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
+            jwtFromRequest:
+                authOptions.authType === AuthType.COOKIE
+                    ? ExtractJwt.fromExtractors([cookieExtractor])
+                    : ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: authOptions.jwt.secret,
+            passReqToCallback: true,
         });
     }
 
     // noinspection JSUnusedGlobalSymbols
-    async validate(jwtPayload: ITokenData): Promise<IUserEntity> {
+    async validate(request: Request, jwtPayload: IJwtPayload): Promise<ICacheUser> {
         try {
-            const user = await this.userService.getUserById(jwtPayload.sub);
-            if (!user) {
-                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
-            }
-            return user;
+            const accessToken: string = request.headers["authorization"].split(" ")[1];
+            const logout = Boolean(request.url.match("/logout"));
+            return await this.authService.validateUserUsingJWT(jwtPayload, accessToken, logout);
         } catch (err: any) {
-            // LoggerService.error(err);
+            LoggerService.error(err);
             return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
         }
     }

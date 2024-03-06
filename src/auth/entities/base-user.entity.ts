@@ -5,7 +5,9 @@ import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 export class BaseUserEntity implements IUserEntity {
     id: any;
 
-    username: string;
+    username?: string;
+
+    email?: string;
 
     password: string;
 

@@ -3,7 +3,7 @@
 /package-lock.json
 
 # Build Output
-auth
+/auth
 index.d.ts
 index.d.ts.map
 index.js

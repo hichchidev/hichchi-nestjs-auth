@@ -4,15 +4,20 @@ const AuthErrors = {
         code: "AUTH_400_EMPTY_UNAME",
         message: "Username cannot be empty!",
     },
-    AUTH_400_EMPTY_PASSWORD: {
-        status: 400,
-        code: "AUTH_400_EMPTY_PASSWORD",
-        message: "Password cannot be empty!",
-    },
     AUTH_400_EMPTY_EMAIL: {
         status: 400,
         code: "AUTH_400_EMPTY_EMAIL",
         message: "Email cannot be empty!",
+    },
+    AUTH_400_EMPTY_UNAME_EMAIL: {
+        status: 400,
+        code: "AUTH_400_EMPTY_UNAME_EMAIL",
+        message: "Username or Email must be entered!",
+    },
+    AUTH_400_EMPTY_PASSWORD: {
+        status: 400,
+        code: "AUTH_400_EMPTY_PASSWORD",
+        message: "Password cannot be empty!",
     },
     AUTH_400_EMPTY_TOKEN: {
         status: 400,

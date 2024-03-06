@@ -11,6 +11,7 @@ import { RedisCacheService } from "hichchi-nestjs-common/cache";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { cookieExtractor } from "../extractors";
 import { LoggerService } from "hichchi-nestjs-common/services";
+import { AuthType } from "../enums/auth-type.enum";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
@@ -27,42 +28,53 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
         const response = context.switchToHttp().getResponse();
 
         try {
-            const accessToken = ExtractJwt.fromExtractors([cookieExtractor])(request);
+            const accessToken =
+                this.authOptions.authType === AuthType.COOKIE
+                    ? ExtractJwt.fromExtractors([cookieExtractor])(request)
+                    : ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+
             if (accessToken) {
                 return this.activate(context);
             }
 
-            const refreshToken = request.signedCookies[REFRESH_TOKEN_COOKIE_NAME];
-            if (!refreshToken) {
-                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_NOT_LOGGED_IN));
+            if (this.authOptions.authType === AuthType.COOKIE) {
+                const refreshToken = request.signedCookies[REFRESH_TOKEN_COOKIE_NAME];
+                if (!refreshToken) {
+                    return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_NOT_LOGGED_IN));
+                }
+
+                const user = await this.authService.getUserByToken(refreshToken, true);
+                const tokens = this.authService.generateTokens(user);
+
+                await this.cacheService.setUser(user);
+
+                request.signedCookies[ACCESS_TOKEN_COOKIE_NAME] = tokens.accessToken;
+
+                response.cookie(ACCESS_TOKEN_COOKIE_NAME, tokens.refreshToken, {
+                    maxAge: Number(this.authOptions.jwt.expiresIn) * 1000,
+                    httpOnly: false,
+                    sameSite: this.authOptions.cookies.sameSite,
+                    secure: this.authOptions.cookies.secure,
+                    signed: true,
+                });
+                response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokens.refreshToken, {
+                    maxAge: Number(this.authOptions.jwt.refreshExpiresIn) * 1000,
+                    httpOnly: false,
+                    sameSite: this.authOptions.cookies.sameSite,
+                    secure: this.authOptions.cookies.secure,
+                    signed: true,
+                });
+
+                return this.activate(context);
             }
 
-            const user = await this.authService.getUserByToken(refreshToken, true);
-            const tokens = this.authService.generateTokens(user);
-            await this.cacheService.setUser(user);
-
-            request.signedCookies[ACCESS_TOKEN_COOKIE_NAME] = tokens.accessToken;
-
-            response.cookie(ACCESS_TOKEN_COOKIE_NAME, tokens.refreshToken, {
-                maxAge: Number(this.authOptions.jwt.expiresIn) * 1000,
-                httpOnly: false,
-                sameSite: this.authOptions.cookies.sameSite,
-                secure: this.authOptions.cookies.secure,
-                signed: true,
-            });
-            response.cookie(REFRESH_TOKEN_COOKIE_NAME, tokens.refreshToken, {
-                maxAge: Number(this.authOptions.jwt.refreshExpiresIn) * 1000,
-                httpOnly: false,
-                sameSite: this.authOptions.cookies.sameSite,
-                secure: this.authOptions.cookies.secure,
-                signed: true,
-            });
-
-            return this.activate(context);
+            return false;
         } catch (err) {
             LoggerService.error(err);
-            response.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
-            response.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+            if (this.authOptions.authType === AuthType.COOKIE) {
+                response.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
+                response.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
+            }
             return false;
         }
     }
