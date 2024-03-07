@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.1.1
+
+### Patch Changes
+
+- c096992: Fix status codes
+
 ## 0.1.0
 
 ### Minor Changes
