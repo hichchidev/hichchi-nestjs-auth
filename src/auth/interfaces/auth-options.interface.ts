@@ -1,7 +1,7 @@
 import { CacheStore, CacheStoreFactory } from "@nestjs/cache-manager/dist/interfaces/cache-manager.interface";
 import { RegisterDto } from "../dtos";
-import { AuthType } from "../enums/auth-type.enum";
-import { AuthBy } from "../enums/auth-by.enum";
+import { AuthMethod } from "../enums/auth-type.enum";
+import { AuthField } from "../enums/auth-by.enum";
 
 export interface RedisCacheOptions {
     store?: string | CacheStoreFactory | CacheStore;
@@ -26,7 +26,7 @@ export interface IAuthOptions {
         sameSite?: boolean | "lax" | "strict" | "none";
         secure?: boolean;
     };
-    authType?: AuthType;
-    authBy?: AuthBy;
+    authMethod?: AuthMethod;
+    authField?: AuthField;
     registerDto?: typeof RegisterDto;
 }

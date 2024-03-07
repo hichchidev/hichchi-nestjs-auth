@@ -39,10 +39,15 @@ const AuthErrors = {
         code: "AUTH_401_CORS",
         message: "Access blocked by CORS!",
     },
-    AUTH_401_INVALID: {
+    AUTH_401_INVALID_UNAME_PASSWORD: {
         status: 401,
-        code: "AUTH_401_INVALID",
+        code: "AUTH_401_INVALID_UNAME_PASSWORD",
         message: "Invalid username or password!",
+    },
+    AUTH_401_INVALID_EMAIL_PASSWORD: {
+        status: 401,
+        code: "AUTH_401_INVALID_EMAIL_PASSWORD",
+        message: "Invalid e-mail or password!",
     },
     AUTH_401_INVALID_PASSWORD: {
         status: 401,
@@ -93,7 +98,7 @@ const AuthErrors = {
         status: 401,
         code: "AUTH_403_PENDING",
         message:
-            "Please verify your email address to continue. If you didn't receive the email you can click " +
+            "Please verify your e-mail address to continue. If you didn't receive the email you can click " +
             "the resend verification button to receive it again!",
     },
     AUTH_403_ROLE_FORBIDDEN: {
@@ -104,7 +109,7 @@ const AuthErrors = {
     AUTH_404_EMAIL: {
         status: 404,
         code: "AUTH_404_EMAIL",
-        message: "Cannot find a user account with this email!",
+        message: "Cannot find a user account with this e-mail!",
     },
     AUTH_500_REGISTER: {
         status: 500,

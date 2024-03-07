@@ -10,7 +10,7 @@ import { AuthService } from "../services/auth.service";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { cookieExtractor } from "../extractors";
 import { LoggerService } from "hichchi-nestjs-common/services";
-import { AuthType } from "../enums/auth-type.enum";
+import { AuthMethod } from "../enums/auth-type.enum";
 import { UserCacheService } from "../services/user-cache.service";
 
 @Injectable()
@@ -29,7 +29,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
 
         try {
             const accessToken =
-                this.authOptions.authType === AuthType.COOKIE
+                this.authOptions.authMethod === AuthMethod.COOKIE
                     ? ExtractJwt.fromExtractors([cookieExtractor])(request)
                     : ExtractJwt.fromAuthHeaderAsBearerToken()(request);
 
@@ -37,7 +37,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
                 return this.activate(context);
             }
 
-            if (this.authOptions.authType === AuthType.COOKIE) {
+            if (this.authOptions.authMethod === AuthMethod.COOKIE) {
                 const refreshToken = request.signedCookies[REFRESH_TOKEN_COOKIE_NAME];
                 if (!refreshToken) {
                     return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_NOT_LOGGED_IN));
@@ -76,7 +76,7 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
             return false;
         } catch (err) {
             LoggerService.error(err);
-            if (this.authOptions.authType === AuthType.COOKIE) {
+            if (this.authOptions.authMethod === AuthMethod.COOKIE) {
                 response.clearCookie(ACCESS_TOKEN_COOKIE_NAME);
                 response.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
             }

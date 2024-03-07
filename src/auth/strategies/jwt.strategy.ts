@@ -5,7 +5,7 @@ import { IAuthOptions, IJwtPayload } from "../interfaces";
 import { AuthErrors } from "../responses";
 import { AUTH_OPTIONS } from "../tokens";
 import { cookieExtractor } from "../extractors";
-import { AuthType } from "../enums/auth-type.enum";
+import { AuthMethod } from "../enums/auth-type.enum";
 import { AuthService } from "../services/auth.service";
 import { LoggerService } from "hichchi-nestjs-common/services";
 import { TokenUser } from "../types/token-user.type";
@@ -18,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ) {
         super({
             jwtFromRequest:
-                authOptions.authType === AuthType.COOKIE
+                authOptions.authMethod === AuthMethod.COOKIE
                     ? ExtractJwt.fromExtractors([cookieExtractor])
                     : ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,

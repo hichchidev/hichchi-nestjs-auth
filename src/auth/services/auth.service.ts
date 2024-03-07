@@ -3,8 +3,8 @@ import {
     IAuthOptions,
     IAuthResponse,
     ICacheUser,
-    IRegisterDto,
     IJwtPayload,
+    IRegisterDto,
     ITokenResponse,
     IUserService,
 } from "../interfaces";
@@ -14,8 +14,8 @@ import { TokenExpiredError } from "@nestjs/jwt";
 import { AuthErrors } from "../responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { UpdatePasswordDto } from "../dtos/update-password.dto";
-import { AuthBy } from "../enums/auth-by.enum";
-import { AuthType } from "../enums/auth-type.enum";
+import { AuthField } from "../enums/auth-by.enum";
+import { AuthMethod } from "../enums/auth-type.enum";
 import { Response } from "express";
 import { UserCacheService } from "./user-cache.service";
 import { JwtTokenService } from "./jwt-token.service";
@@ -58,22 +58,27 @@ export class AuthService {
     }
 
     async authenticate(username: string, password: string): Promise<IUserEntity> {
+        const INVALID_CREDS =
+            this.authOptions.authField === AuthField.EMAIL
+                ? AuthErrors.AUTH_401_INVALID_EMAIL_PASSWORD
+                : AuthErrors.AUTH_401_INVALID_UNAME_PASSWORD;
+
         try {
             // eslint-disable-next-line no-console
             // console.log("hichchi-nestjs-auth => authOptions: ", this.authOptions);
 
             const user =
-                this.authOptions.authBy === AuthBy.USERNAME
+                this.authOptions.authField === AuthField.USERNAME
                     ? await this.userService.getUserByUsername(username)
-                    : this.authOptions.authBy === AuthBy.EMAIL
+                    : this.authOptions.authField === AuthField.EMAIL
                       ? await this.userService.getUserByEmail(username)
                       : await this.userService.getUserByUsernameOrEmail(username);
 
             if (!user) {
-                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID));
+                return Promise.reject(new UnauthorizedException(INVALID_CREDS));
             }
             if (!AuthService.verifyHash(password, user.password, user.salt)) {
-                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID));
+                return Promise.reject(new UnauthorizedException(INVALID_CREDS));
             }
             // if (user.status === Status.PENDING) {
             //     return Promise.reject(new ForbiddenException(AuthErrors.AUTH_403_PENDING));
@@ -86,7 +91,7 @@ export class AuthService {
             return user;
         } catch (err: any) {
             LoggerService.error(err);
-            throw new UnauthorizedException(AuthErrors.AUTH_401_INVALID);
+            throw new UnauthorizedException(INVALID_CREDS);
         }
     }
 
@@ -108,7 +113,7 @@ export class AuthService {
 
         await this.cacheService.setUser(cacheUser);
 
-        if (this.authOptions.authType === AuthType.COOKIE) {
+        if (this.authOptions.authMethod === AuthMethod.COOKIE) {
             response.cookie(ACCESS_TOKEN_COOKIE_NAME, tokenResponse.accessToken, {
                 maxAge: this.authOptions.jwt.expiresIn * 1000,
                 httpOnly: true,
@@ -305,7 +310,7 @@ export class AuthService {
     // }
 
     async logout(user: TokenUser, response: Response): Promise<SuccessResponse> {
-        if (this.authOptions.authType === AuthType.COOKIE) {
+        if (this.authOptions.authMethod === AuthMethod.COOKIE) {
             response.cookie(ACCESS_TOKEN_COOKIE_NAME, "", {
                 maxAge: 0,
                 httpOnly: true,

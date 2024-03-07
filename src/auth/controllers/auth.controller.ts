@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Inject, Post, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "../services/auth.service";
 import { AUTH_ENDPOINT, AUTH_OPTIONS } from "../tokens";
 import { IAuthOptions, IAuthResponse } from "../interfaces";
@@ -21,11 +21,13 @@ export class AuthController {
     ) {}
 
     @Post("register")
+    @HttpCode(201)
     async register(@Body() dto: any): Promise<IUserEntity> {
         return this.authService.register(await validateDto(this.authOptions.registerDto ?? RegisterDto, dto));
     }
 
     @Post("login")
+    @HttpCode(200)
     @UseGuards(LocalAuthGuard)
     async login(
         @CurrentUser() user: IUserEntity,
@@ -36,12 +38,14 @@ export class AuthController {
     }
 
     @Get("me")
+    @HttpCode(200)
     @UseGuards(JwtAuthGuard)
     async getCurrentUser(@CurrentUser() user: TokenUser): Promise<IUserEntity> {
         return this.authService.getCurrentUser(user.id);
     }
 
     @Post("change-password")
+    @HttpCode(201)
     @UseGuards(JwtAuthGuard)
     changePassword(@CurrentUser() user: TokenUser, @Body() updatePasswordDto: UpdatePasswordDto): Promise<IUserEntity> {
         return this.authService.changePassword(user.id, updatePasswordDto);
@@ -68,6 +72,7 @@ export class AuthController {
     // }
 
     @Post("logout")
+    @HttpCode(200)
     @UseGuards(JwtAuthGuard)
     async clearAuthentication(
         @CurrentUser() user: TokenUser,

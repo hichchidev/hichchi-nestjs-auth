@@ -1,4 +1,4 @@
-export enum AuthType {
+export enum AuthMethod {
     COOKIE = "cookie",
     JWT = "jwt",
 }
