@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 0.1.0
+
+### Minor Changes
+
+- 15fed40: Updated auth service to use cached sessions and added new options and features
+
 ## 0.0.9
 
 ### Patch Changes
