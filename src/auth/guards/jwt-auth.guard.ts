@@ -6,12 +6,12 @@ import { AuthErrors } from "../responses";
 import { ExtractJwt } from "passport-jwt";
 import { IAuthOptions, ICacheUser } from "../interfaces";
 import { ACCESS_TOKEN_COOKIE_NAME, AUTH_OPTIONS, REFRESH_TOKEN_COOKIE_NAME } from "../tokens";
-import { AuthService } from "../services/auth.service";
+import { AuthService } from "../services";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { cookieExtractor } from "../extractors";
 import { LoggerService } from "hichchi-nestjs-common/services";
-import { AuthMethod } from "../enums/auth-type.enum";
-import { UserCacheService } from "../services/user-cache.service";
+import { AuthMethod } from "../enums";
+import { UserCacheService } from "../services";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {

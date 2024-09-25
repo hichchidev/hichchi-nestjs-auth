@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import { Inject, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import {
     IAuthOptions,
@@ -13,15 +15,16 @@ import { pbkdf2Sync, randomBytes } from "crypto";
 import { TokenExpiredError } from "@nestjs/jwt";
 import { AuthErrors } from "../responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
-import { UpdatePasswordDto } from "../dtos/update-password.dto";
-import { AuthField } from "../enums/auth-by.enum";
-import { AuthMethod } from "../enums/auth-type.enum";
+import { UpdatePasswordDto } from "../dtos";
+import { AuthField } from "../enums";
+import { AuthMethod } from "../enums";
 import { Response } from "express";
 import { UserCacheService } from "./user-cache.service";
 import { JwtTokenService } from "./jwt-token.service";
 import { LoggerService } from "hichchi-nestjs-common/services";
 import { SuccessResponse } from "hichchi-nestjs-common/responses";
-import { TokenUser } from "../types/token-user.type";
+import { TokenUser } from "../types";
+import { getRandomValues } from "node:crypto";
 
 @Injectable()
 export class AuthService {
@@ -32,9 +35,20 @@ export class AuthService {
         private readonly jwtTokenService: JwtTokenService,
     ) {}
 
-    // noinspection JSUnusedGlobalSymbols
     public static generateRandomHash(): string {
         return randomBytes(48).toString("hex");
+    }
+
+    public static generateRandomPassword(length: number): string {
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+";
+        let password = "";
+        const randomValues = new Uint32Array(length);
+        getRandomValues(randomValues);
+        for (let i = 0; i < length; i++) {
+            const randomIndex = randomValues[i] % charset.length;
+            password += charset[randomIndex];
+        }
+        return password;
     }
 
     public static generatePassword(password: string): { salt: string; password: string } {
@@ -51,28 +65,25 @@ export class AuthService {
     async register(registerDto: IRegisterDto): Promise<IUserEntity> {
         const { password: rawPass, ...rest } = registerDto;
         const { password, salt } = AuthService.generatePassword(rawPass);
-        const user = await this.userService.createUser({ ...rest, password, salt });
+        const user = await this.userService.registerUser({ ...rest, password, salt });
         delete user.password;
         delete user.salt;
         return user;
     }
 
-    async authenticate(username: string, password: string): Promise<IUserEntity> {
+    async authenticate(username: string, password: string, subdomain?: string): Promise<IUserEntity> {
         const INVALID_CREDS =
             this.authOptions.authField === AuthField.EMAIL
                 ? AuthErrors.AUTH_401_INVALID_EMAIL_PASSWORD
                 : AuthErrors.AUTH_401_INVALID_UNAME_PASSWORD;
 
         try {
-            // eslint-disable-next-line no-console
-            // console.log("hichchi-nestjs-auth => authOptions: ", this.authOptions);
-
             const user =
                 this.authOptions.authField === AuthField.USERNAME
-                    ? await this.userService.getUserByUsername(username)
+                    ? await this.userService.getUserByUsername(username, subdomain)
                     : this.authOptions.authField === AuthField.EMAIL
-                      ? await this.userService.getUserByEmail(username)
-                      : await this.userService.getUserByUsernameOrEmail(username);
+                      ? await this.userService.getUserByEmail(username, subdomain)
+                      : await this.userService.getUserByUsernameOrEmail(username, subdomain);
 
             if (!user) {
                 return Promise.reject(new UnauthorizedException(INVALID_CREDS));
@@ -99,8 +110,8 @@ export class AuthService {
         const tokenResponse = this.generateTokens(user);
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, salt, ...rest } = user;
-        const cacheUser: ICacheUser = (await this.cacheService.getUser(user.id)) ?? { ...rest, sessions: [] };
+        const { password, salt, ...rest } = new this.authOptions.viewDto().formatDataSet(user);
+        const cacheUser: ICacheUser = { ...rest, sessions: (await this.cacheService.getUser(user.id))?.sessions ?? [] };
 
         if (cacheUser.sessions.length) {
             cacheUser.sessions.push({
@@ -172,12 +183,16 @@ export class AuthService {
         return this.userService.getUserById(id);
     }
 
-    async changePassword(id: number, updatePasswordDto: UpdatePasswordDto): Promise<IUserEntity> {
+    async changePassword(
+        id: number,
+        updatePasswordDto: UpdatePasswordDto,
+        updatedBy: IUserEntity,
+    ): Promise<IUserEntity> {
         const { password, salt } = await this.userService.getUserById(id);
         const { oldPassword, newPassword } = updatePasswordDto;
         if (AuthService.verifyHash(oldPassword, password, salt)) {
             const { password, salt } = AuthService.generatePassword(newPassword);
-            const user = await this.userService.updateUserById(id, { password, salt });
+            const user = await this.userService.updateUserById(id, { password, salt }, updatedBy);
             delete user.password;
             delete user.salt;
             return user;

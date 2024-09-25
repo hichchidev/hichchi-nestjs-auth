@@ -1,22 +1,23 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { Module, DynamicModule, Global } from "@nestjs/common";
-import { AuthService } from "./services/auth.service";
+import { AuthService } from "./services";
 import { UserServiceFactoryProvider, UserServiceExistingProvider } from "./providers";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { IAuthOptions } from "./interfaces";
 import { AUTH_OPTIONS, USER_SERVICE } from "./tokens";
-import { AuthController } from "./controllers/auth.controller";
+import { AuthController } from "./controllers";
 import * as redisStore from "cache-manager-redis-store";
 import { LocalStrategy } from "./strategies";
-import { JwtStrategy } from "./strategies/jwt.strategy";
-import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { JwtStrategy } from "./strategies";
+import { JwtAuthGuard } from "./guards";
 import { RedisCacheModule } from "hichchi-nestjs-common/cache";
-import { AuthMethod } from "./enums/auth-type.enum";
-import { AuthField } from "./enums/auth-by.enum";
-import { UserCacheService } from "./services/user-cache.service";
-import { JwtTokenService } from "./services/jwt-token.service";
+import { AuthMethod } from "./enums";
+import { AuthField } from "./enums";
+import { UserCacheService } from "./services";
+import { JwtTokenService } from "./services";
+import { RegisterDto, ViewDto } from "./dtos";
 
 // noinspection SpellCheckingInspection
 export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
@@ -29,7 +30,7 @@ export class HichchiAuthModule {
         authOptions: IAuthOptions,
     ): DynamicModule {
         // noinspection SpellCheckingInspection
-        const options: IAuthOptions = {
+        const options: Required<IAuthOptions> = {
             redis: authOptions.redis?.url
                 ? {
                       ttl: authOptions.redis?.ttl || 10,
@@ -56,9 +57,14 @@ export class HichchiAuthModule {
                 sameSite: authOptions.cookies?.sameSite || "none",
                 secure: Boolean(authOptions.cookies?.secure),
             },
+            socket: {
+                idKey: authOptions.socket?.idKey || "Socket-Id",
+            },
             authMethod: authOptions.authMethod ?? AuthMethod.JWT,
             authField: authOptions.authField ?? AuthField.BOTH,
-            registerDto: authOptions.registerDto,
+            disableRegistration: authOptions.disableRegistration ?? false,
+            registerDto: authOptions.registerDto ?? RegisterDto,
+            viewDto: authOptions.viewDto ?? ViewDto,
         };
 
         return {
@@ -89,7 +95,16 @@ export class HichchiAuthModule {
                 ...((userServiceProvider as UserServiceFactoryProvider).inject ?? []),
             ],
             controllers: [AuthController],
-            exports: [AuthService, JwtStrategy, JwtAuthGuard],
+            exports: [
+                AuthService,
+                JwtStrategy,
+                JwtAuthGuard,
+                UserCacheService,
+                {
+                    provide: AUTH_OPTIONS,
+                    useValue: options,
+                },
+            ],
         };
     }
 }

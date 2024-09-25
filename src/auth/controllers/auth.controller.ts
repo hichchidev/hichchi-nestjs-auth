@@ -1,17 +1,18 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Res, UseGuards } from "@nestjs/common";
-import { AuthService } from "../services/auth.service";
+import { Body, Controller, ForbiddenException, Get, HttpCode, Inject, Post, Res, UseGuards } from "@nestjs/common";
+import { AuthService } from "../services";
 import { AUTH_ENDPOINT, AUTH_OPTIONS } from "../tokens";
 import { IAuthOptions, IAuthResponse } from "../interfaces";
 import { LocalAuthGuard } from "../guards";
-import { LoginDto, RegisterDto } from "../dtos";
+import { LoginDto } from "../dtos";
 import { Response } from "express";
-import { CurrentUser } from "../decorators/request-user.decorator";
-import { JwtAuthGuard } from "../guards/jwt-auth.guard";
+import { CurrentUser } from "../decorators";
+import { JwtAuthGuard } from "../guards";
 import { validateDto } from "hichchi-nestjs-common/utils";
 import { SuccessResponse } from "hichchi-nestjs-common/responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
-import { UpdatePasswordDto } from "../dtos/update-password.dto";
-import { TokenUser } from "../types/token-user.type";
+import { UpdatePasswordDto } from "../dtos";
+import { TokenUser } from "../types";
+import { AuthErrors } from "../responses";
 
 @Controller(AUTH_ENDPOINT)
 export class AuthController {
@@ -23,7 +24,10 @@ export class AuthController {
     @Post("register")
     @HttpCode(201)
     async register(@Body() dto: any): Promise<IUserEntity> {
-        return this.authService.register(await validateDto(this.authOptions.registerDto ?? RegisterDto, dto));
+        if (this.authOptions.disableRegistration) {
+            throw new ForbiddenException(AuthErrors.USER_403_REGISTER);
+        }
+        return this.authService.register(await validateDto(this.authOptions.registerDto, dto));
     }
 
     @Post("login")
@@ -48,7 +52,7 @@ export class AuthController {
     @HttpCode(201)
     @UseGuards(JwtAuthGuard)
     changePassword(@CurrentUser() user: TokenUser, @Body() updatePasswordDto: UpdatePasswordDto): Promise<IUserEntity> {
-        return this.authService.changePassword(user.id, updatePasswordDto);
+        return this.authService.changePassword(user.id, updatePasswordDto, user as unknown as IUserEntity);
     }
 
     // @Post("verify-account")

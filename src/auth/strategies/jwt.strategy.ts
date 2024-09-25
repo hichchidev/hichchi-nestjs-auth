@@ -5,10 +5,10 @@ import { IAuthOptions, IJwtPayload } from "../interfaces";
 import { AuthErrors } from "../responses";
 import { AUTH_OPTIONS } from "../tokens";
 import { cookieExtractor } from "../extractors";
-import { AuthMethod } from "../enums/auth-type.enum";
-import { AuthService } from "../services/auth.service";
+import { AuthMethod } from "../enums";
+import { AuthService } from "../services";
 import { LoggerService } from "hichchi-nestjs-common/services";
-import { TokenUser } from "../types/token-user.type";
+import { TokenUser } from "../types";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -31,8 +31,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(request: Request, jwtPayload: IJwtPayload): Promise<TokenUser> {
         try {
             const accessToken: string = request.headers["authorization"].split(" ")[1];
+            let socketId: string;
+            if (this.authOptions.socket?.idKey) {
+                socketId = request.headers[this.authOptions.socket.idKey.replace("-", "").toLowerCase()];
+            }
             const logout = Boolean(request.url.match("/logout"));
-            return await this.authService.validateUserUsingJWT(jwtPayload, accessToken, logout);
+            const user = await this.authService.validateUserUsingJWT(jwtPayload, accessToken, logout);
+            user.socketId = socketId;
+            return user;
         } catch (err: any) {
             LoggerService.error(err);
             return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));

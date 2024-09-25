@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectTasksOptions">
     <TaskOptions isEnabled="true">
-      <option name="arguments" value="run build:dev &amp;&amp; rimraf &quot;C:/Workspace/Work/kore.ai/bot-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;dist/**&quot; &quot;C:/Workspace/Work/kore.ai/bot-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;package.json&quot; &quot;C:/Workspace/Work/kore.ai/bot-api/node_modules/hichchi-nestjs-auth&quot; &amp;&amp; cpx &quot;node_modules&quot; &quot;&quot;C:/Workspace/Work/kore.ai/bot-api/node_modules/hichchi-nestjs-auth&quot;" />
+      <option name="arguments" value="run build-and-copy" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
       <option name="exitCodeBehavior" value="ALWAYS" />

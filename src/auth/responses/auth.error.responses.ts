@@ -104,7 +104,7 @@ const AuthErrors = {
     AUTH_403_ROLE_FORBIDDEN: {
         status: 403,
         code: "AUTH_403_ROLE_FORBIDDEN",
-        message: "User doesn't have privileges to access this resource!",
+        message: "You don't have privileges to access this resource!",
     },
     AUTH_404_EMAIL: {
         status: 404,
@@ -126,6 +126,11 @@ const AuthErrors = {
         code: "AUTH_500",
         message: "Error occurred!",
     },
+    USER_400_EMPTY_EMAIL: {
+        status: 400,
+        code: "USER_400_EMPTY_EMAIL",
+        message: "Email cannot be empty!",
+    },
     USER_400_EMPTY_FNAME: {
         status: 400,
         code: "USER_400_EMPTY_FNAME",
@@ -146,6 +151,11 @@ const AuthErrors = {
         code: "USER_400_EMPTY_PASSWORD",
         message: "User password cannot be empty!",
     },
+    USER_400_INVALID_EMAIL: {
+        status: 400,
+        code: "USER_400_INVALID_EMAIL",
+        message: "Invalid e-mail address!",
+    },
     USER_400_NOT_EMPTY_UNAME: {
         status: 400,
         code: "USER_400_NOT_EMPTY_UNAME",
@@ -160,6 +170,11 @@ const AuthErrors = {
         status: 400,
         code: "USER_400_NOT_EMPTY_SALT",
         message: "User salt cannot be inserted/updated!",
+    },
+    USER_403_REGISTER: {
+        status: 403,
+        code: "USER_403_REGISTER",
+        message: "User registration is disabled!",
     },
     USER_404: {
         status: 404,
