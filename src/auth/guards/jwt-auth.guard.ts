@@ -12,6 +12,7 @@ import { cookieExtractor } from "../extractors";
 import { LoggerService } from "hichchi-nestjs-common/services";
 import { AuthMethod } from "../enums";
 import { UserCacheService } from "../services";
+import { v4 as uuid } from "uuid";
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard("jwt") {
@@ -49,7 +50,11 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
                 const cacheUser: ICacheUser = (await this.cacheService.getUser(user.id)) ?? { ...user, sessions: [] };
 
                 cacheUser.sessions = cacheUser.sessions.filter((session) => session.refreshToken !== refreshToken);
-                cacheUser.sessions.push({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+                cacheUser.sessions.push({
+                    sessionId: uuid(),
+                    accessToken: tokens.accessToken,
+                    refreshToken: tokens.refreshToken,
+                });
 
                 await this.cacheService.setUser(cacheUser);
 

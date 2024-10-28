@@ -25,6 +25,7 @@ import { LoggerService } from "hichchi-nestjs-common/services";
 import { SuccessResponse } from "hichchi-nestjs-common/responses";
 import { TokenUser } from "../types";
 import { getRandomValues } from "node:crypto";
+import { v4 as uuid } from "uuid";
 
 @Injectable()
 export class AuthService {
@@ -115,11 +116,14 @@ export class AuthService {
 
         if (cacheUser.sessions.length) {
             cacheUser.sessions.push({
+                sessionId: uuid(),
                 accessToken: tokenResponse.accessToken,
                 refreshToken: tokenResponse.refreshToken,
             });
         } else {
-            cacheUser.sessions = [{ accessToken: tokenResponse.accessToken, refreshToken: tokenResponse.refreshToken }];
+            cacheUser.sessions = [
+                { sessionId: uuid(), accessToken: tokenResponse.accessToken, refreshToken: tokenResponse.refreshToken },
+            ];
         }
 
         await this.cacheService.setUser(cacheUser);
@@ -174,6 +178,7 @@ export class AuthService {
 
         return {
             ...user,
+            sessionId: session.sessionId,
             accessToken: session.accessToken,
             refreshToken: session.refreshToken,
         };
