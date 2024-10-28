@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 1.1.0
+
+### Minor Changes
+
+- 2c09f3e: Bug fixes and new minor changes
+
 ## 1.0.0
 
 ### Major Changes
