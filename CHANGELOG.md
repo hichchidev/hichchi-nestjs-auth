@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 1.1.1
+
+### Patch Changes
+
+- 14757c5: - Fix error response for non-authenticated requests without an access token.
+
 ## 1.1.0
 
 ### Minor Changes
