@@ -76,9 +76,9 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
                 });
 
                 return this.activate(context);
+            } else {
+                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_NOT_LOGGED_IN));
             }
-
-            return false;
         } catch (err) {
             LoggerService.error(err);
             if (this.authOptions.authMethod === AuthMethod.COOKIE) {
