@@ -15,6 +15,7 @@ import { RedisCacheModule } from "hichchi-nestjs-common/cache";
 import { AuthField, AuthMethod } from "./enums";
 import { RegisterDto, ViewDto } from "./dtos";
 import { exit } from "process";
+import { TokenVerifyService } from "./services/token-verify.service";
 
 // noinspection SpellCheckingInspection
 export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
@@ -89,13 +90,13 @@ export class HichchiAuthModule {
         const options: Required<IAuthOptions> = {
             redis: authOptions.redis?.url
                 ? {
-                      ttl: authOptions.redis?.ttl || 10,
+                      ttl: authOptions.redis?.ttl,
                       store: authOptions.redis?.store || redisStore,
                       url: authOptions.redis?.url,
                       prefix: authOptions.redis?.prefix,
                   }
                 : {
-                      ttl: authOptions.redis?.ttl || 10,
+                      ttl: authOptions.redis?.ttl,
                       store: authOptions.redis?.store || redisStore,
                       host: authOptions.redis?.host || "localhost",
                       port: authOptions.redis?.port || 6379,
@@ -116,6 +117,7 @@ export class HichchiAuthModule {
             socket: {
                 idKey: authOptions.socket?.idKey || "Socket-Id",
             },
+            passwordResetExp: authOptions.passwordResetExp || 60 * 15,
             authMethod: authOptions.authMethod ?? AuthMethod.JWT,
             authField: authOptions.authField ?? AuthField.BOTH,
             disableRegistration: authOptions.disableRegistration ?? false,
@@ -148,6 +150,7 @@ export class HichchiAuthModule {
                 LocalStrategy,
                 JwtStrategy,
                 JwtAuthGuard,
+                TokenVerifyService,
                 ...((userServiceProvider as UserServiceFactoryProvider).inject ?? []),
             ],
             controllers: [AuthController],
@@ -156,6 +159,7 @@ export class HichchiAuthModule {
                 JwtStrategy,
                 JwtAuthGuard,
                 UserCacheService,
+                TokenVerifyService,
                 {
                     provide: AUTH_OPTIONS,
                     useValue: options,

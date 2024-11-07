@@ -36,9 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 socketId = request.headers[this.authOptions.socket.idKey.replace("-", "").toLowerCase()];
             }
             const logout = Boolean(request.url.match("/logout"));
-            const user = await this.authService.validateUserUsingJWT(jwtPayload, accessToken, logout);
-            user.socketId = socketId;
-            return user;
+            return await this.authService.authenticateJWT(jwtPayload, accessToken, logout, socketId);
         } catch (err) {
             if (err instanceof UnauthorizedException) {
                 return Promise.reject(err);

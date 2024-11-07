@@ -3,5 +3,6 @@ import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 
 // noinspection JSUnusedGlobalSymbols
 export interface IAuthResponse extends ITokenResponse {
-    user: IUserEntity;
+    sessionId: string;
+    user: Omit<IUserEntity, "password" | "salt">;
 }

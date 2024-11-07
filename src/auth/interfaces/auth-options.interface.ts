@@ -30,6 +30,7 @@ export interface IAuthOptions {
     socket?: {
         idKey: string;
     };
+    passwordResetExp?: number;
     authMethod?: AuthMethod;
     authField?: AuthField;
     registerDto?: typeof RegisterDto;

@@ -109,6 +109,11 @@ const AuthErrors = {
         code: "AUTH_401_EXPIRED_REFRESH_TOKEN",
         message: "Expired refresh token received!",
     },
+    AUTH_401_EXPIRED_OR_INVALID_PASSWORD_RESET_TOKEN: {
+        status: 401,
+        code: "AUTH_401_EXPIRED_OR_INVALID_PASSWORD_RESET_TOKEN",
+        message: "Expired or invalid password reset token received!",
+    },
     AUTH_401_UNKNOWN: {
         status: 401,
         code: "AUTH_401_UNKNOWN",
@@ -140,6 +145,16 @@ const AuthErrors = {
         status: 500,
         code: "AUTH_500_LOGIN",
         message: "Error occurred while logging in!",
+    },
+    AUTH_500_REQUEST_PASSWORD_RESET: {
+        status: 500,
+        code: "AUTH_500_REQUEST_PASSWORD_RESET",
+        message: "Error occurred while requesting password reset!",
+    },
+    AUTH_500_PASSWORD_RESET: {
+        status: 500,
+        code: "AUTH_500_PASSWORD_RESET",
+        message: "Error occurred while resetting password!",
     },
     AUTH_500: {
         status: 500,
