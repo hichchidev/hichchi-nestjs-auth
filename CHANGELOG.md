@@ -1,5 +1,11 @@
 # hichchi-nestjs-auth
 
+## 2.1.1
+
+### Patch Changes
+
+- df3e2f0: - Fix bug in Auth action logging
+
 ## 2.1.0
 
 ### Minor Changes
