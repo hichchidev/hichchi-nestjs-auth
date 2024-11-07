@@ -388,11 +388,10 @@ export class AuthService {
 
             const tokenResponse: ITokenResponse = this.generateTokens(user);
 
-            await this.updateCacheUser(user, tokenResponse, token);
-
+            const cacheUser = await this.updateCacheUser(user, tokenResponse, token);
+            const tokenUser = generateTokenUser(cacheUser, tokenResponse.accessToken);
             this.setAuthCookies(response, tokenResponse);
 
-            const tokenUser = (await this.cacheService.getUser(user.id)) as unknown as TokenUser;
             this.userService.onRefreshTokens?.(request, tokenUser).catch();
 
             return tokenResponse;
@@ -504,8 +503,7 @@ export class AuthService {
                 const emailSent = await this.userService.sendPasswordResetEmail(user.email, token);
 
                 if (setToken && emailSent) {
-                    const tokenUser = (await this.cacheService.getUser(user.id)) as unknown as TokenUser;
-                    this.userService.onRequestPasswordReset?.(request, tokenUser).catch();
+                    this.userService.onRequestPasswordReset?.(request, user.id).catch();
                     return new SuccessResponse("Password reset email sent successfully");
                 }
 
@@ -527,9 +525,8 @@ export class AuthService {
      */
     async verifyResetPasswordToken(request: Request, verifyDto: ResetPasswordTokenVerifyDto): Promise<SuccessResponse> {
         const userId = await this.tokenVerifyService.getUserIdByPasswordResetToken(verifyDto.token);
-        const tokenUser = (await this.cacheService.getUser(userId)) as unknown as TokenUser;
         if (userId) {
-            this.userService.onVerifyResetPasswordToken?.(request, tokenUser).catch();
+            this.userService.onVerifyResetPasswordToken?.(request, userId).catch();
             return new SuccessResponse("Valid password reset token");
         }
 
@@ -562,8 +559,7 @@ export class AuthService {
 
             await this.tokenVerifyService.clearPasswordResetTokenByUserId(userId);
 
-            const tokenUser = (await this.cacheService.getUser(userId)) as unknown as TokenUser;
-            this.userService.onResetPassword?.(request, tokenUser).catch();
+            this.userService.onResetPassword?.(request, userId).catch();
 
             return new SuccessResponse("Password reset successfully");
         } catch {

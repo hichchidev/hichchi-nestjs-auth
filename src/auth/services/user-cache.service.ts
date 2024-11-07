@@ -21,9 +21,9 @@ export class UserCacheService {
     /**
      * Get a user from cache
      * @param {number} id User id
-     * @returns {Promise<ICacheUser>} User from cache
+     * @returns {Promise<ICacheUser|undefined>} User from cache
      */
-    async getUser(id: string | number): Promise<ICacheUser> {
+    async getUser(id: string | number): Promise<ICacheUser | undefined> {
         return await this.cacheService.get<ICacheUser>(USER_PREFIX(id));
     }
 

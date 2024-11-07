@@ -9,9 +9,10 @@ export class TokenVerifyService {
     constructor(private readonly cacheService: RedisCacheService) {}
 
     async savePasswordResetToken(userId: string | number, token: string | number, ttl?: number): Promise<boolean> {
+        const clear = await this.clearPasswordResetTokenByUserId(userId);
         const byId = await this.cacheService.set<string | number>(PASSWORD_RESET_USER_KEY(userId), token, ttl);
         const byToken = await this.cacheService.set<string | number>(PASSWORD_RESET_TOKEN_KEY(token), userId, ttl);
-        return byId && byToken;
+        return clear && byId && byToken;
     }
 
     async getPasswordResetTokenByUserId(userId: string | number): Promise<string | number> {
