@@ -1,5 +1,13 @@
 # hichchi-nestjs-auth
 
+## 2.1.0
+
+### Minor Changes
+
+- 4b9270d: - Added new APIs for reset password
+  - Changed authentication flow and tokenUser creation
+  - Added new auth options
+
 ## 2.0.0
 
 ### Major Changes
