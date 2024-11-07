@@ -30,6 +30,8 @@ export interface IAuthOptions {
     socket?: {
         idKey: string;
     };
+    checkEmailVerified?: boolean;
+    emailVerifyRedirect?: string;
     passwordResetExp?: number;
     authMethod?: AuthMethod;
     authField?: AuthField;

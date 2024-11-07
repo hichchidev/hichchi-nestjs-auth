@@ -1,6 +1,7 @@
 // noinspection JSUnusedGlobalSymbols,ExceptionCaughtLocallyJS
 
 import {
+    BadRequestException,
     HttpException,
     Inject,
     Injectable,
@@ -22,7 +23,14 @@ import { pbkdf2Sync, randomBytes, randomInt } from "crypto";
 import { JsonWebTokenError, TokenExpiredError } from "@nestjs/jwt";
 import { AuthErrors } from "../responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
-import { RequestResetDto, UpdatePasswordDto } from "../dtos";
+import {
+    EmailVerifyDto,
+    RequestResetDto,
+    ResendEmailVerifyDto,
+    ResetPasswordDto,
+    ResetPasswordTokenVerifyDto,
+    UpdatePasswordDto,
+} from "../dtos";
 import { AuthField, AuthMethod } from "../enums";
 import { Request, Response } from "express";
 import { UserCacheService } from "./user-cache.service";
@@ -31,8 +39,6 @@ import { LoggerService } from "hichchi-nestjs-common/services";
 import { Errors, SuccessResponse } from "hichchi-nestjs-common/responses";
 import { v4 as uuid } from "uuid";
 import { TokenVerifyService } from "./token-verify.service";
-import { ResetPasswordTokenVerifyDto } from "../dtos/reset-password-token-verify.dto";
-import { ResetPasswordDto } from "../dtos/reset-password.dto";
 import { TokenUser } from "../types";
 import { generateTokenUser } from "../utils";
 
@@ -140,6 +146,9 @@ export class AuthService {
             }
             if (!AuthService.verifyHash(password, user.password, user.salt)) {
                 return Promise.reject(new UnauthorizedException(INVALID_CREDS));
+            }
+            if (this.authOptions.checkEmailVerified && !user.emailVerified) {
+                return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_EMAIL_NOT_VERIFIED));
             }
             // if (user.status === Status.PENDING) {
             //     return Promise.reject(new ForbiddenException(AuthErrors.AUTH_403_PENDING));
@@ -315,6 +324,7 @@ export class AuthService {
         const { password: rawPass, ...rest } = registerDto;
         const { password, salt } = AuthService.generatePassword(rawPass);
         const user = await this.userService.registerUser({ ...rest, password, salt });
+        await this.sendVerificationEmail(user);
         delete user.password;
         delete user.salt;
         this.userService.onRegister?.(request, user.id).catch();
@@ -436,53 +446,78 @@ export class AuthService {
         }
     }
 
-    // async verifyAccount(token: string): Promise<SuccessResponse> {
-    //     const verification = await this.verificationService.getOne({
-    //         where: { token, type: VerificationType.EMAIL },
-    //         relations: ["user"],
-    //     });
-    //     if (verification) {
-    //         await this.userService.update(verification.user.id, { status: Status.ACTIVE });
-    //         await this.verificationService.deleteToken(verification.id);
-    //         return new SuccessResponse("Account verified successfully");
-    //     }
-    //     throw new NotFoundException(AuthErrors.AUTH_401_INVALID_VERIFICATION_TOKEN);
-    // }
+    /**
+     * Send a verification email
+     * @param {IUserEntity} user User entity
+     */
+    async sendVerificationEmail(user: IUserEntity): Promise<void> {
+        if (!this.userService.sendVerificationEmail) {
+            throw new NotFoundException(Errors.E_404_NOT_IMPLEMENTED);
+        }
 
-    // async resendVerification(email: string): Promise<SuccessResponse> {
-    //     try {
-    //         const user = await this.userService.getOne({ where: { email } });
-    //         if (user) {
-    //             if (user.status === Status.ACTIVE) {
-    //                 return Promise.reject(new BadRequestException(AuthErrors.AUTH_400_ALREADY_VERIFIED));
-    //             }
-    //             try {
-    //                 const verification = await this.verificationService.getOne({
-    //                     where: { user: { id: user.id }, type: VerificationType.EMAIL },
-    //                 });
-    //                 await this.verificationService.deleteToken(verification.id);
-    //             } catch (err) {
-    //                 if (!(err instanceof NotFoundException)) {
-    //                     return Promise.reject(err);
-    //                 }
-    //             }
-    //             await this.sendVerificationEmail(user);
-    //             return new SuccessResponse("Verification email sent successfully");
-    //         }
-    //         return Promise.reject(new NotFoundException(AuthErrors.AUTH_404_EMAIL));
-    //     } catch (err) {
-    //         if (err instanceof NotFoundException) {
-    //             throw new NotFoundException(AuthErrors.AUTH_404_EMAIL);
-    //         }
-    //         throw err;
-    //     }
-    // }
+        try {
+            const token = AuthService.generateRandomHash(16);
+            await this.tokenVerifyService.saveEmailVerifyToken(user.id, token);
+            await this.userService.sendVerificationEmail(user.id, token);
+        } catch (err) {
+            if (err instanceof HttpException) {
+                throw err;
+            }
+            throw new InternalServerErrorException(AuthErrors.AUTH_500_SEND_EMAIL_VERIFICATION);
+        }
+    }
 
-    // async sendVerificationEmail(user: IUserEntity): Promise<void> {
-    //     const token = AuthService.generateRandomHash();
-    //     await this.verificationService.save({ user, token, type: VerificationType.EMAIL });
-    //     await this.emailService.sendVerificationEmail(user.email, user.name, token);
-    // }
+    /**
+     * Resend a verification email
+     * @param {Request} request Request object
+     * @param {ResendEmailVerifyDto} resendEmailVerifyDto Resend email verify DTO
+     * @returns {Promise<SuccessResponse>} Success response
+     */
+    async resendEmailVerification(
+        request: Request,
+        resendEmailVerifyDto: ResendEmailVerifyDto,
+    ): Promise<SuccessResponse> {
+        if (!this.userService.sendVerificationEmail) {
+            throw new NotFoundException(Errors.E_404_NOT_IMPLEMENTED);
+        }
+
+        const user = await this.userService.getUserByEmail(resendEmailVerifyDto.email);
+        if (user) {
+            if (user.emailVerified) {
+                throw new BadRequestException(AuthErrors.AUTH_400_EMAIL_ALREADY_VERIFIED);
+            }
+            await this.sendVerificationEmail(user);
+            this.userService.onResendVerificationEmail?.(request, user.id).catch();
+            return new SuccessResponse("Verification email sent successfully");
+        }
+
+        throw new NotFoundException(AuthErrors.AUTH_404_EMAIL);
+    }
+
+    /**
+     * Verify an account
+     * @param {Request} request Request object
+     * @param {EmailVerifyDto} emailVerifyDto Email verify DTO
+     */
+    async verifyEmail(request: Request, emailVerifyDto: EmailVerifyDto): Promise<boolean> {
+        if (!this.userService.sendVerificationEmail) {
+            throw new NotFoundException(Errors.E_404_NOT_IMPLEMENTED);
+        }
+
+        try {
+            const userId = await this.tokenVerifyService.getUserIdByEmailVerifyToken(emailVerifyDto.token);
+            if (userId) {
+                await this.userService.updateUserById(userId, { emailVerified: true }, { id: userId } as IUserEntity);
+                await this.tokenVerifyService.clearEmailVerifyTokenByUserId(userId);
+                this.userService.onVerifyEmail?.(request, userId, true).catch();
+                return true;
+            }
+            this.userService.onVerifyEmail?.(request, userId, false).catch();
+            return false;
+        } catch {
+            return false;
+        }
+    }
 
     /**
      * Request password reset email
@@ -524,6 +559,10 @@ export class AuthService {
      * @returns {Promise<SuccessResponse>} Success response
      */
     async verifyResetPasswordToken(request: Request, verifyDto: ResetPasswordTokenVerifyDto): Promise<SuccessResponse> {
+        if (!this.userService.getUserByEmail || !this.userService.sendPasswordResetEmail) {
+            throw new NotFoundException(Errors.E_404_NOT_IMPLEMENTED);
+        }
+
         const userId = await this.tokenVerifyService.getUserIdByPasswordResetToken(verifyDto.token);
         if (userId) {
             this.userService.onVerifyResetPasswordToken?.(request, userId).catch();
@@ -540,6 +579,10 @@ export class AuthService {
      * @returns {Promise<SuccessResponse>} Success response
      */
     async resetPassword(request: Request, resetPasswordDto: ResetPasswordDto): Promise<SuccessResponse> {
+        if (!this.userService.getUserByEmail || !this.userService.sendPasswordResetEmail) {
+            throw new NotFoundException(Errors.E_404_NOT_IMPLEMENTED);
+        }
+
         try {
             const { token, password } = resetPasswordDto;
             const userId = await this.tokenVerifyService.getUserIdByPasswordResetToken(token);

@@ -19,6 +19,16 @@ const AuthErrors = {
         code: "AUTH_400_EMPTY_PASSWORD",
         message: "Password cannot be empty!",
     },
+    AUTH_400_EMPTY_OLD_PASSWORD: {
+        status: 400,
+        code: "AUTH_400_EMPTY_OLD_PASSWORD",
+        message: "Old password cannot be empty!",
+    },
+    AUTH_400_EMPTY_NEW_PASSWORD: {
+        status: 400,
+        code: "AUTH_400_EMPTY_NEW_PASSWORD",
+        message: "New password cannot be empty!",
+    },
     AUTH_400_EMPTY_TOKEN: {
         status: 400,
         code: "AUTH_400_EMPTY_TOKEN",
@@ -29,10 +39,10 @@ const AuthErrors = {
         code: "AUTH_400_EMPTY_REFRESH_TOKEN",
         message: "Refresh token cannot be empty!",
     },
-    AUTH_400_ALREADY_VERIFIED: {
+    AUTH_400_EMAIL_ALREADY_VERIFIED: {
         status: 400,
-        code: "AUTH_400_ALREADY_VERIFIED",
-        message: "Account already verified!",
+        code: "AUTH_400_EMAIL_ALREADY_VERIFIED",
+        message: "Email already verified!",
     },
     AUTH_400_ACCOUNT_DISABLED: {
         status: 400,
@@ -63,6 +73,11 @@ const AuthErrors = {
         status: 401,
         code: "AUTH_401_NOT_LOGGED_IN",
         message: "User must be logged in to access this resource!",
+    },
+    AUTH_401_EMAIL_NOT_VERIFIED: {
+        status: 401,
+        code: "AUTH_401_EMAIL_NOT_VERIFIED",
+        message: "User e-mail not verified!",
     },
     AUTH_401_NOT_ACTIVE: {
         status: 401,
@@ -145,6 +160,16 @@ const AuthErrors = {
         status: 500,
         code: "AUTH_500_LOGIN",
         message: "Error occurred while logging in!",
+    },
+    AUTH_500_SEND_EMAIL_VERIFICATION: {
+        status: 500,
+        code: "AUTH_500_SEND_EMAIL_VERIFICATION",
+        message: "Error occurred while sending email verification!",
+    },
+    AUTH_500_VERIFY_EMAIL: {
+        status: 500,
+        code: "AUTH_500_VERIFY_EMAIL",
+        message: "Error occurred while verifying email!",
     },
     AUTH_500_REQUEST_PASSWORD_RESET: {
         status: 500,

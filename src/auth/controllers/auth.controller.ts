@@ -1,9 +1,30 @@
-import { Body, Controller, ForbiddenException, Get, HttpCode, Inject, Post, Req, Res, UseGuards } from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    ForbiddenException,
+    Get,
+    HttpCode,
+    Inject,
+    Post,
+    Query,
+    Req,
+    Res,
+    UseGuards,
+} from "@nestjs/common";
 import { AuthService } from "../services";
 import { AUTH_ENDPOINT, AUTH_OPTIONS } from "../tokens";
 import { IAuthOptions, IAuthResponse } from "../interfaces";
 import { JwtAuthGuard, LocalAuthGuard } from "../guards";
-import { LoginDto, RefreshTokenDto, RequestResetDto, UpdatePasswordDto } from "../dtos";
+import {
+    EmailVerifyDto,
+    LoginDto,
+    RefreshTokenDto,
+    RequestResetDto,
+    ResendEmailVerifyDto,
+    ResetPasswordDto,
+    ResetPasswordTokenVerifyDto,
+    UpdatePasswordDto,
+} from "../dtos";
 import { Request, Response } from "express";
 import { CurrentUser } from "../decorators";
 import { validateDto } from "hichchi-nestjs-common/utils";
@@ -11,8 +32,6 @@ import { SuccessResponse } from "hichchi-nestjs-common/responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 import { TokenUser } from "../types";
 import { AuthErrors } from "../responses";
-import { ResetPasswordTokenVerifyDto } from "../dtos/reset-password-token-verify.dto";
-import { ResetPasswordDto } from "../dtos/reset-password.dto";
 
 @Controller(AUTH_ENDPOINT)
 export class AuthController {
@@ -43,7 +62,7 @@ export class AuthController {
     }
 
     @Post("refresh-token")
-    @HttpCode(201)
+    @HttpCode(200)
     refreshTokens(
         @Req() request: Request,
         @Body() refreshTokenDto: RefreshTokenDto,
@@ -60,7 +79,7 @@ export class AuthController {
     }
 
     @Post("change-password")
-    @HttpCode(201)
+    @HttpCode(200)
     @UseGuards(JwtAuthGuard)
     changePassword(
         @Req() request: Request,
@@ -70,22 +89,34 @@ export class AuthController {
         return this.authService.changePassword(request, tokenUser, updatePasswordDto);
     }
 
-    // @Post("verify-account")
-    // verifyAccount(@Body() verificationDto: VerificationDto): Promise<SuccessResponse> {
-    //     return this.authService.verifyAccount(verificationDto.token);
-    // }
-    //
-    // @Post("resend-verification")
-    // resendVerification(@Body() verificationDto: ResendVerificationDto): Promise<SuccessResponse> {
-    //     return this.authService.resendVerification(verificationDto.email);
-    // }
+    @Post("resend-email-verify")
+    @HttpCode(200)
+    resendEmailVerification(
+        @Req() request: Request,
+        @Body() resendEmailVerifyDto: ResendEmailVerifyDto,
+    ): Promise<SuccessResponse> {
+        return this.authService.resendEmailVerification(request, resendEmailVerifyDto);
+    }
+
+    @Get("verify-email")
+    @HttpCode(200)
+    async verifyEmail(
+        @Req() request: Request,
+        @Res() response: Response,
+        @Query() emailVerifyDto: EmailVerifyDto,
+    ): Promise<void> {
+        const verified = await this.authService.verifyEmail(request, emailVerifyDto);
+        response.redirect(`${this.authOptions.emailVerifyRedirect}?verified=${verified}`);
+    }
 
     @Post("request-password-reset")
+    @HttpCode(200)
     requestPasswordReset(@Req() request: Request, @Body() requestResetDto: RequestResetDto): Promise<SuccessResponse> {
         return this.authService.requestPasswordReset(request, requestResetDto);
     }
 
     @Post("reset-password-verify")
+    @HttpCode(200)
     verifyResetPasswordToken(
         @Req() request: Request,
         @Body() verifyDto: ResetPasswordTokenVerifyDto,
@@ -94,6 +125,7 @@ export class AuthController {
     }
 
     @Post("reset-password")
+    @HttpCode(200)
     resetPassword(@Req() request: Request, @Body() resetPasswordDto: ResetPasswordDto): Promise<SuccessResponse> {
         return this.authService.resetPassword(request, resetPasswordDto);
     }

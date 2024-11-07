@@ -117,6 +117,8 @@ export class HichchiAuthModule {
             socket: {
                 idKey: authOptions.socket?.idKey || "Socket-Id",
             },
+            checkEmailVerified: authOptions.checkEmailVerified ?? false,
+            emailVerifyRedirect: authOptions.emailVerifyRedirect || "http://localhost:4200/verify-email",
             passwordResetExp: authOptions.passwordResetExp || 60 * 15,
             authMethod: authOptions.authMethod ?? AuthMethod.JWT,
             authField: authOptions.authField ?? AuthField.BOTH,
