@@ -1,23 +1,20 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { Module, DynamicModule, Global } from "@nestjs/common";
-import { AuthService } from "./services";
-import { UserServiceFactoryProvider, UserServiceExistingProvider } from "./providers";
+import { DynamicModule, Global, Inject, Logger, Module } from "@nestjs/common";
+import { AuthService, JwtTokenService, UserCacheService } from "./services";
+import { UserServiceExistingProvider, UserServiceFactoryProvider } from "./providers";
 import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
-import { IAuthOptions } from "./interfaces";
+import { IAuthOptions, IUserService } from "./interfaces";
 import { AUTH_OPTIONS, USER_SERVICE } from "./tokens";
 import { AuthController } from "./controllers";
 import * as redisStore from "cache-manager-redis-store";
-import { LocalStrategy } from "./strategies";
-import { JwtStrategy } from "./strategies";
+import { JwtStrategy, LocalStrategy } from "./strategies";
 import { JwtAuthGuard } from "./guards";
 import { RedisCacheModule } from "hichchi-nestjs-common/cache";
-import { AuthMethod } from "./enums";
-import { AuthField } from "./enums";
-import { UserCacheService } from "./services";
-import { JwtTokenService } from "./services";
+import { AuthField, AuthMethod } from "./enums";
 import { RegisterDto, ViewDto } from "./dtos";
+import { exit } from "process";
 
 // noinspection SpellCheckingInspection
 export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
@@ -25,11 +22,70 @@ export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
 @Global()
 @Module({})
 export class HichchiAuthModule {
-    static registerAsync(
+    constructor(@Inject(USER_SERVICE) userService: IUserService, @Inject(AUTH_OPTIONS) options: IAuthOptions) {
+        HichchiAuthModule.validateUserServiceProvider(userService, options);
+    }
+
+    /**
+     * Register the HichchiAuthModule asynchronously
+     *
+     * This method is used to register the `HichchiAuthModule` asynchronously.
+     * It takes a user service provider and authentication options as arguments and returns a dynamic module.
+     * The user service provider can be either `UserServiceFactoryProvider` or `UserServiceExistingProvider`.
+     * The `UserService` used in the user service provider should implement the `IUserService` interface provided by the `hichchi-nestjs-auth` package.
+     *
+     * The authentication options include the redis, jwt, cookies, socket, authMethod, authField, disableRegistration, registerDto, and viewDto.
+     *
+     * @example
+     * ```typescript
+     * @Module({
+     *     imports: [
+     *         HichchiAuthModule.registerAsync(
+     *             // Using UserServiceFactoryProvider
+     *             {
+     *                 imports: [UserModule],
+     *                 useFactory: (userService: UserService) => userService,
+     *                 inject: [UserService],
+     *             },
+     *             { ... },
+     *         ),
+     *     ],
+     *     controllers: [...],
+     *     providers: [...],
+     * })
+     * export class AppModule {}
+     * ```
+     *
+     * @example
+     * ```typescript
+     * @Module({
+     *     imports: [
+     *         HichchiAuthModule.registerAsync(
+     *             // Using UserServiceExistingProvider
+     *             {
+     *                 imports: [UserModule],
+     *                 useExisting: UserService,
+     *             },
+     *             { ... },
+     *         ),
+     *     ],
+     *     controllers: [...],
+     *     providers: [...],
+     * })
+     * export class AppModule {}
+     *
+     * ```
+     *
+     * @param {UserServiceFactoryProvider | UserServiceExistingProvider} userServiceProvider The user service provider
+     * @param {IAuthOptions} authOptions The authentication options
+     * @returns {DynamicModule} The dynamic module
+     */
+    public static registerAsync(
         userServiceProvider: UserServiceFactoryProvider | UserServiceExistingProvider,
         authOptions: IAuthOptions,
     ): DynamicModule {
-        // noinspection SpellCheckingInspection
+        this.validateAuthOptions(authOptions);
+
         const options: Required<IAuthOptions> = {
             redis: authOptions.redis?.url
                 ? {
@@ -39,8 +95,8 @@ export class HichchiAuthModule {
                       prefix: authOptions.redis?.prefix,
                   }
                 : {
-                      store: authOptions.redis?.store || redisStore,
                       ttl: authOptions.redis?.ttl || 10,
+                      store: authOptions.redis?.store || redisStore,
                       host: authOptions.redis?.host || "localhost",
                       port: authOptions.redis?.port || 6379,
                       auth_pass: authOptions.redis?.auth_pass,
@@ -106,5 +162,52 @@ export class HichchiAuthModule {
                 },
             ],
         };
+    }
+
+    private static validateAuthOptions(options: IAuthOptions): boolean {
+        if (!options) {
+            this.logOptionError();
+        }
+        return true;
+    }
+
+    private static validateUserServiceProvider(userService: IUserService, options: IAuthOptions): void {
+        if (!userService.registerUser) {
+            this.logProviderError("registerUser");
+        } else if (!userService.getUserById) {
+            this.logProviderError("getUserById");
+        } else if (!userService.updateUserById) {
+            this.logProviderError("registerUser");
+        } else if (
+            (options.authField === AuthField.EMAIL || options.authField === AuthField.BOTH) &&
+            !userService.getUserByEmail
+        ) {
+            this.logProviderError("getUserByEmail", "EMAIL");
+        } else if (
+            (options.authField === AuthField.USERNAME || options.authField === AuthField.BOTH) &&
+            !userService.getUserByUsername
+        ) {
+            this.logProviderError("getUserByUsername", "USERNAME");
+        } else if (options.authField === AuthField.BOTH && !userService.getUserByUsernameOrEmail) {
+            this.logProviderError("getUserByUsernameOrEmail", "BOTH");
+        }
+    }
+
+    private static logOptionError(): void {
+        const error = "";
+        this.logAndExit(error);
+    }
+
+    private static logProviderError(method: string, authField?: string): void {
+        const error =
+            `UserService does not implements the IUserService interface properly\n\n` +
+            `    UserService provided to HichchiAuthModule.registerAsync() does not implements the ${method} method in IUserService interface provided by hichchi-nestjs-auth\n\n` +
+            `${authField ? `    ${method} method should be implemented when authField is set to ${authField}${authField === "BOTH" ? "" : " or BOTH\n"}` : ""}`;
+        this.logAndExit(error);
+    }
+
+    static logAndExit(error: string): void {
+        Logger.error(error);
+        exit(1);
     }
 }

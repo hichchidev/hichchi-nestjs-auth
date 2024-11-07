@@ -24,6 +24,11 @@ const AuthErrors = {
         code: "AUTH_400_EMPTY_TOKEN",
         message: "Token cannot be empty!",
     },
+    AUTH_400_EMPTY_REFRESH_TOKEN: {
+        status: 400,
+        code: "AUTH_400_EMPTY_REFRESH_TOKEN",
+        message: "Refresh token cannot be empty!",
+    },
     AUTH_400_ALREADY_VERIFIED: {
         status: 400,
         code: "AUTH_400_ALREADY_VERIFIED",
@@ -77,7 +82,12 @@ const AuthErrors = {
     AUTH_401_INVALID_TOKEN: {
         status: 401,
         code: "AUTH_401_INVALID_TOKEN",
-        message: "Invalid or expired token received!",
+        message: "Invalid token received!",
+    },
+    AUTH_401_EXPIRED_TOKEN: {
+        status: 401,
+        code: "AUTH_401_EXPIRED_TOKEN",
+        message: "Expired token received!",
     },
     AUTH_401_INVALID_VERIFICATION_TOKEN: {
         status: 401,
@@ -92,7 +102,17 @@ const AuthErrors = {
     AUTH_401_INVALID_REFRESH_TOKEN: {
         status: 401,
         code: "AUTH_401_INVALID_REFRESH_TOKEN",
-        message: "Invalid or expired refresh token received!",
+        message: "Invalid refresh token received!",
+    },
+    AUTH_401_EXPIRED_REFRESH_TOKEN: {
+        status: 401,
+        code: "AUTH_401_EXPIRED_REFRESH_TOKEN",
+        message: "Expired refresh token received!",
+    },
+    AUTH_401_UNKNOWN: {
+        status: 401,
+        code: "AUTH_401_UNKNOWN",
+        message: "Unknown error occurred!",
     },
     AUTH_403_PENDING: {
         status: 401,

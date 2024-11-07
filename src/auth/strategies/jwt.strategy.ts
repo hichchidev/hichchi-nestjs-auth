@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 authOptions.authMethod === AuthMethod.COOKIE
                     ? ExtractJwt.fromExtractors([cookieExtractor])
                     : ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
+            ignoreExpiration: true,
             secretOrKey: authOptions.jwt.secret,
             passReqToCallback: true,
         });
@@ -39,9 +39,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             const user = await this.authService.validateUserUsingJWT(jwtPayload, accessToken, logout);
             user.socketId = socketId;
             return user;
-        } catch (err: any) {
+        } catch (err) {
+            if (err instanceof UnauthorizedException) {
+                return Promise.reject(err);
+            }
             LoggerService.error(err);
-            return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_INVALID_TOKEN));
+            return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_UNKNOWN));
         }
     }
 }

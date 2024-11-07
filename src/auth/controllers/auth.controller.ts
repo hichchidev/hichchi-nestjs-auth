@@ -3,7 +3,7 @@ import { AuthService } from "../services";
 import { AUTH_ENDPOINT, AUTH_OPTIONS } from "../tokens";
 import { IAuthOptions, IAuthResponse } from "../interfaces";
 import { LocalAuthGuard } from "../guards";
-import { LoginDto } from "../dtos";
+import { LoginDto, RefreshTokenDto } from "../dtos";
 import { Response } from "express";
 import { CurrentUser } from "../decorators";
 import { JwtAuthGuard } from "../guards";
@@ -41,11 +41,20 @@ export class AuthController {
         return this.authService.login(user, response);
     }
 
+    @Post("refresh-token")
+    @HttpCode(201)
+    refreshTokens(
+        @Body() refreshTokenDto: RefreshTokenDto,
+        @Res({ passthrough: true }) response: Response,
+    ): Promise<any> {
+        return this.authService.refreshTokens(refreshTokenDto.refreshToken, response);
+    }
+
     @Get("me")
     @HttpCode(200)
     @UseGuards(JwtAuthGuard)
     async getCurrentUser(@CurrentUser() user: TokenUser): Promise<IUserEntity> {
-        return this.authService.getCurrentUser(user.id);
+        return this.authService.getUserById(user.id);
     }
 
     @Post("change-password")
