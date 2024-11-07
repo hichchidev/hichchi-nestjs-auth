@@ -1,5 +1,16 @@
 # hichchi-nestjs-auth
 
+## 2.0.0
+
+### Major Changes
+
+- 5ab39d0: - Fix error response for non-authenticated requests without an access token.
+  - Refactored all arrow function exports to named function exports
+  - Added inline documentations (JSDoc)
+  - Improved some functions
+  - Added validation for user service provider configurations
+  - Add refresh token API
+
 ## 1.1.1
 
 ### Patch Changes
