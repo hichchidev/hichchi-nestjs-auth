@@ -1,5 +1,12 @@
 # hichchi-nestjs-auth
 
+## 2.2.0
+
+### Minor Changes
+
+- 745dbd0: - Added email verification support
+  - Added google authentication support
+
 ## 2.1.2
 
 ### Patch Changes
