@@ -13,9 +13,10 @@ import { LoggerService } from "hichchi-nestjs-common/services";
 import { AuthMethod } from "../enums";
 import { UserCacheService } from "../services";
 import { v4 as uuid } from "uuid";
+import { AuthStrategy } from "../enums/auth-strategies.enum";
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard("jwt") {
+export class JwtAuthGuard extends AuthGuard(AuthStrategy.JWT) {
     constructor(
         @Inject(AUTH_OPTIONS) private readonly authOptions: IAuthOptions,
         private readonly authService: AuthService,

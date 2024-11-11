@@ -154,12 +154,22 @@ const AuthErrors = {
     AUTH_500_REGISTER: {
         status: 500,
         code: "AUTH_500_REGISTER",
-        message: "Error occurred while applying!",
+        message: "Error occurred while registering!",
+    },
+    AUTH_500_REGISTER_AUTH_500_REGISTER_SOCIAL: {
+        status: 500,
+        code: "AUTH_500_REGISTER_AUTH_500_REGISTER_SOCIAL",
+        message: "Error occurred while registering with social media account!",
     },
     AUTH_500_LOGIN: {
         status: 500,
         code: "AUTH_500_LOGIN",
         message: "Error occurred while logging in!",
+    },
+    AUTH_500_SOCIAL_LOGIN: {
+        status: 500,
+        code: "AUTH_500_SOCIAL_LOGIN",
+        message: "Error occurred while logging in with social media account!",
     },
     AUTH_500_SEND_EMAIL_VERIFICATION: {
         status: 500,

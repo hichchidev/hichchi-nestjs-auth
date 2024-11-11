@@ -16,6 +16,8 @@ import { AuthField, AuthMethod } from "./enums";
 import { RegisterDto, ViewDto } from "./dtos";
 import { exit } from "process";
 import { TokenVerifyService } from "./services/token-verify.service";
+import { GoogleStrategy } from "./strategies/google.strategy";
+import { GoogleAuthGuard } from "./guards/google-auth.guard";
 
 // noinspection SpellCheckingInspection
 export const DEFAULT_SECRET = "3cGnEj4Kd1ENr8UcX8fBKugmv7lXmZyJtsa_fo-RcIk";
@@ -109,6 +111,17 @@ export class HichchiAuthModule {
                 refreshSecret: authOptions.jwt?.refreshSecret || DEFAULT_SECRET,
                 refreshExpiresIn: authOptions.jwt?.refreshExpiresIn || 60 * 60 * 24 * 60,
             },
+            oAuth: {
+                domain: authOptions.oAuth?.domain,
+                clientId: authOptions.oAuth?.clientId,
+                clientSecret: authOptions.oAuth?.clientSecret,
+                callbackUrl: authOptions.oAuth?.callbackUrl,
+            },
+            googleAuth: {
+                clientId: authOptions.googleAuth?.clientId,
+                clientSecret: authOptions.googleAuth?.clientSecret,
+                callbackUrl: authOptions.googleAuth?.callbackUrl,
+            },
             cookies: {
                 secret: authOptions.cookies?.secret || authOptions.cookies?.secure ? DEFAULT_SECRET : undefined,
                 sameSite: authOptions.cookies?.sameSite || "none",
@@ -152,6 +165,8 @@ export class HichchiAuthModule {
                 LocalStrategy,
                 JwtStrategy,
                 JwtAuthGuard,
+                GoogleStrategy,
+                GoogleAuthGuard,
                 TokenVerifyService,
                 ...((userServiceProvider as UserServiceFactoryProvider).inject ?? []),
             ],
@@ -160,6 +175,8 @@ export class HichchiAuthModule {
                 AuthService,
                 JwtStrategy,
                 JwtAuthGuard,
+                GoogleStrategy,
+                GoogleAuthGuard,
                 UserCacheService,
                 TokenVerifyService,
                 {

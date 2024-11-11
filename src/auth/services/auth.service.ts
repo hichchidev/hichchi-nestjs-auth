@@ -31,7 +31,7 @@ import {
     ResetPasswordTokenVerifyDto,
     UpdatePasswordDto,
 } from "../dtos";
-import { AuthField, AuthMethod } from "../enums";
+import { AuthField, AuthMethod, RegType } from "../enums";
 import { Request, Response } from "express";
 import { UserCacheService } from "./user-cache.service";
 import { JwtTokenService } from "./jwt-token.service";
@@ -41,6 +41,7 @@ import { v4 as uuid } from "uuid";
 import { TokenVerifyService } from "./token-verify.service";
 import { TokenUser } from "../types";
 import { generateTokenUser } from "../utils";
+import { IGoogleProfile } from "../interfaces/google-profile.interface";
 
 @Injectable()
 export class AuthService {
@@ -150,6 +151,7 @@ export class AuthService {
             if (this.authOptions.checkEmailVerified && !user.emailVerified) {
                 return Promise.reject(new UnauthorizedException(AuthErrors.AUTH_401_EMAIL_NOT_VERIFIED));
             }
+
             // if (user.status === Status.PENDING) {
             //     return Promise.reject(new ForbiddenException(AuthErrors.AUTH_403_PENDING));
             // }
@@ -210,6 +212,35 @@ export class AuthService {
     }
 
     /**
+     * Authenticate a user using Google
+     * @param {IGoogleProfile} profile Google profile
+     * @param {string} redirectUrl Redirect URL
+     * @returns {Promise<TokenUser>} Token user
+     */
+    async authenticateGoogle(profile: IGoogleProfile, redirectUrl?: string): Promise<TokenUser> {
+        let user = await this.userService.getUserByEmail(profile.email);
+        if (!user) {
+            try {
+                user = await this.userService.registerUser(
+                    {
+                        firstName: profile.given_name,
+                        lastName: profile.family_name,
+                        email: profile.email,
+                    },
+                    RegType.GOOGLE,
+                    profile,
+                );
+            } catch (err) {
+                LoggerService.error(err);
+                throw new UnauthorizedException(AuthErrors.AUTH_500_REGISTER);
+            }
+        }
+        const tokenResponse = this.generateTokens(user);
+        const cacheUser = await this.updateCacheUser(user, tokenResponse, undefined, redirectUrl);
+        return generateTokenUser(cacheUser, tokenResponse.accessToken);
+    }
+
+    /**
      * Ger a user by token
      * @param {string} token Token
      * @param {boolean} refresh Weather if the token is a refresh token
@@ -257,14 +288,16 @@ export class AuthService {
 
     /**
      * Update the cache user
-     * @param user User entity
-     * @param tokenResponse Token response
-     * @param oldRefreshToken Old refresh token
+     * @param {IUserEntity} user User entity
+     * @param {ITokenResponse} tokenResponse Token response
+     * @param {string} oldRefreshToken Old refresh token
+     * @param {string} frontendUrl Redirect URL
      */
     async updateCacheUser(
         user: IUserEntity,
         tokenResponse: ITokenResponse,
         oldRefreshToken?: string,
+        frontendUrl?: string,
     ): Promise<ICacheUser> {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, salt, ...rest } = new this.authOptions.viewDto().formatDataSet(user);
@@ -278,10 +311,16 @@ export class AuthService {
                 sessionId: uuid(),
                 accessToken: tokenResponse.accessToken,
                 refreshToken: tokenResponse.refreshToken,
+                frontendUrl,
             });
         } else {
             cacheUser.sessions = [
-                { sessionId: uuid(), accessToken: tokenResponse.accessToken, refreshToken: tokenResponse.refreshToken },
+                {
+                    sessionId: uuid(),
+                    accessToken: tokenResponse.accessToken,
+                    refreshToken: tokenResponse.refreshToken,
+                    frontendUrl,
+                },
             ];
         }
 
@@ -292,8 +331,8 @@ export class AuthService {
 
     /**
      * Set the auth cookies
-     * @param response Response object
-     * @param tokenResponse Token response
+     * @param {Response} response Response object
+     * @param {ITokenResponse} tokenResponse Token response
      */
     setAuthCookies(response: Response, tokenResponse: ITokenResponse): void {
         if (this.authOptions.authMethod === AuthMethod.COOKIE) {
@@ -318,12 +357,13 @@ export class AuthService {
      * Register a new user
      * @param {Request} request Request object
      * @param {IRegisterDto} registerDto Register DTO
+     * @param {RegType} regType Registration type
      * @returns {Promise<IUserEntity>} Registered user
      */
-    async register(request: Request, registerDto: IRegisterDto): Promise<IUserEntity> {
+    async register(request: Request, registerDto: IRegisterDto, regType: RegType.LOCAL): Promise<IUserEntity> {
         const { password: rawPass, ...rest } = registerDto;
         const { password, salt } = AuthService.generatePassword(rawPass);
-        const user = await this.userService.registerUser({ ...rest, password, salt });
+        const user = await this.userService.registerUser({ ...rest, password, salt }, regType);
         await this.sendVerificationEmail(user);
         delete user.password;
         delete user.salt;

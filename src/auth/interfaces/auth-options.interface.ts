@@ -22,6 +22,17 @@ export interface IAuthOptions {
         refreshSecret?: string;
         refreshExpiresIn?: number;
     };
+    oAuth?: {
+        domain: string;
+        clientId: string;
+        clientSecret: string;
+        callbackUrl: string;
+    };
+    googleAuth: {
+        clientId: string;
+        clientSecret: string;
+        callbackUrl: string;
+    };
     cookies?: {
         secret?: string;
         sameSite?: boolean | "lax" | "strict" | "none";

@@ -5,6 +5,12 @@ import { IUserEntity } from "hichchi-nestjs-common/interfaces";
 export class BaseUserEntity implements IUserEntity {
     id: any;
 
+    firstName: string;
+
+    lastName: string;
+
+    fullName: string;
+
     username?: string;
 
     email?: string;
@@ -14,4 +20,10 @@ export class BaseUserEntity implements IUserEntity {
     salt: string;
 
     role?: string;
+
+    emailVerified?: boolean;
+
+    avatar?: string;
+
+    profileData?: object;
 }

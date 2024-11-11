@@ -16,6 +16,7 @@ export function generateTokenUser(cacheUser: ICacheUser, accessToken?: string, s
         accessToken,
         refreshToken: session?.refreshToken,
         sessionId: session?.sessionId,
+        frontendUrl: session?.frontendUrl,
         socketId: socketId,
     };
 }

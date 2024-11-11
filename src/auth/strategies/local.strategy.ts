@@ -6,9 +6,10 @@ import { AUTH_OPTIONS } from "../tokens";
 import { AuthField } from "../enums";
 import { IAuthOptions } from "../interfaces";
 import { TokenUser } from "../types";
+import { AuthStrategy } from "../enums/auth-strategies.enum";
 
 @Injectable()
-export class LocalStrategy extends PassportStrategy(Strategy) {
+export class LocalStrategy extends PassportStrategy(Strategy, AuthStrategy.LOCAL) {
     constructor(
         @Inject(AUTH_OPTIONS) private readonly authOptions: IAuthOptions,
         private readonly authService: AuthService,

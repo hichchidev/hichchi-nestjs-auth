@@ -5,9 +5,10 @@ import { ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/com
 import { Observable } from "rxjs";
 import { AuthErrors } from "../responses";
 import { IUserEntity } from "hichchi-nestjs-common/interfaces";
+import { AuthStrategy } from "../enums/auth-strategies.enum";
 
 @Injectable()
-export class LocalAuthGuard extends AuthGuard("local") {
+export class LocalAuthGuard extends AuthGuard(AuthStrategy.LOCAL) {
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
         return super.canActivate(context);
     }
